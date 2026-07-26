@@ -15,6 +15,6 @@ The result is kept as a stress-test because the AUV can drift far outside the na
 
 - Full SSS: `khoa_environment_raycast_survey_full.png`
 - Pass montage: `khoa_environment_raycast_survey_5pass_montage.png`
-- Environment summary: `03_environment/environment_and_sensor_summary.json`
+- Environment summary: `environment_and_sensor_summary.json`
 
 This does not represent a controlled AUV survey. A realistic current experiment should add a path-following controller or compensation model before treating the output as final survey data.

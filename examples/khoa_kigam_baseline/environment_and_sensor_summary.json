@@ -1,6 +1,6 @@
 {
   "holoocean_version": "2.4.0",
-  "binary_path": "Advanced\\shipwreck_project_workspace\\10_holoocean_sim\\holoocean_2_4_official_runtime\\2.4.0\\worlds\\Ocean\\Windows\\Holodeck\\Binaries\\Win64\\Holodeck.clean_macro_only_khoa.exe",
+  "binary_path": "<HoloOcean-2.4.0-runtime>\\worlds\\Ocean\\Windows\\Holodeck\\Binaries\\Win64\\Holodeck.exe",
   "world": "FlatUnderwater",
   "scene_proxy": "khoa_survey_scene_v1",
   "terrain": {
@@ -59,7 +59,7 @@
   },
   "rows": 1500,
   "cols": 2000,
-  "full_sss": "Advanced\\shipwreck_project_workspace\\06_results\\20260725_clean_terrain_final_kigam_material_buoy_water\\01_SSS\\khoa_environment_raycast_survey_full.png",
-  "pass_montage": "Advanced\\shipwreck_project_workspace\\06_results\\20260725_clean_terrain_final_kigam_material_buoy_water\\01_SSS\\khoa_environment_raycast_survey_5pass_montage.png",
+  "full_sss": "examples\\khoa_kigam_baseline\\khoa_environment_raycast_survey_full.png",
+  "pass_montage": "examples\\khoa_kigam_baseline\\khoa_environment_raycast_survey_5pass_montage.png",
   "range_gain_note": "Diagnostic TVG/EGN-style image only; raw SSS is preserved separately."
 }

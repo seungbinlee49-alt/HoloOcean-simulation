@@ -23,7 +23,7 @@ The current direction/speed values are still stored in `environment_and_sensor_s
 - Full SSS: `khoa_environment_raycast_survey_full.png`
 - Pass montage: `khoa_environment_raycast_survey_5pass_montage.png`
 - Range-gain diagnostic: `khoa_environment_raycast_survey_full_range_gain_diagnostic.png`
-- Object contact table: `03_environment/khoa_object_ground_contact_table.csv`
-- Environment summary: `03_environment/environment_and_sensor_summary.json`
+- Object contact table: `khoa_object_ground_contact_table.csv`
+- Environment summary: `environment_and_sensor_summary.json`
 
 The range-gain diagnostic image is only a visualization aid. The normal SSS output is `khoa_environment_raycast_survey_full.png`.

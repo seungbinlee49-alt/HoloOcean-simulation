@@ -2,23 +2,23 @@
   "target": {
     "name": "Taean-Mado bbox center",
     "lat": 36.6925,
-    "lon": 126.13499999999999
+    "lon": 126.135
   },
-  "source_file": "Advanced\\shipwreck_project_workspace\\03_data\\khoa_observation_current_20260722\\reference\\khoa_buoy_status_20250818.csv",
+  "source_file": "KHOA buoy status reference table used during preprocessing; original CSV is not included in this repository.",
   "source_encoding": "cp949",
   "csv_columns": [
-    "해양관측부이 고유번호",
-    "관측소 유형",
-    "해양관측부이 명",
-    "해양관측부이 위도",
-    "해양관측부이 경도",
-    "해양관측부이 영문명"
+    "station_id",
+    "station_type",
+    "station_name_ko",
+    "latitude",
+    "longitude",
+    "station_name_en"
   ],
   "nearest": [
     {
       "obsCode": "TW_0082",
       "station_type": "TW",
-      "name_ko": "태안항",
+      "name_ko": "태안",
       "lat": 37.006722,
       "lon": 126.270222,
       "name_en": "Taean",
@@ -39,7 +39,7 @@
       "name_ko": "평택당진항",
       "lat": 37.136666,
       "lon": 126.540833,
-      "name_en": "Pyeontaek·Dangjin Hang",
+      "name_en": "Pyeongtaek-Dangjin Port",
       "dist_to_taean_mado_center_km": 61.164
     },
     {
@@ -48,7 +48,7 @@
       "name_ko": "인천항",
       "lat": 37.389444,
       "lon": 126.533055,
-      "name_en": "Incheon Hang",
+      "name_en": "Incheon Port",
       "dist_to_taean_mado_center_km": 85.17
     },
     {
@@ -57,7 +57,7 @@
       "name_ko": "군산항",
       "lat": 35.984166,
       "lon": 126.50875,
-      "name_en": "Gunsan Hang",
+      "name_en": "Gunsan Port",
       "dist_to_taean_mado_center_km": 85.582
     },
     {
@@ -66,7 +66,7 @@
       "name_ko": "경인항",
       "lat": 37.523388,
       "lon": 126.592083,
-      "name_en": "Gyeongin Hang",
+      "name_en": "Gyeongin Port",
       "dist_to_taean_mado_center_km": 100.891
     },
     {
@@ -75,7 +75,7 @@
       "name_ko": "상왕등도",
       "lat": 35.652472,
       "lon": 126.19425,
-      "name_en": "SangWang",
+      "name_en": "Sangwangdeungdo",
       "dist_to_taean_mado_center_km": 115.768
     },
     {
