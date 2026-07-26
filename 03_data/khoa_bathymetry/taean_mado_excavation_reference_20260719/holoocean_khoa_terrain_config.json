@@ -1,0 +1,21 @@
+{
+  "preset_name": "khoa_taean_mado_macro_bathymetry_v1",
+  "source_metadata": "khoa_bathymetry_metadata.json",
+  "heightfield_csv": "khoa_bathymetry_water_resampled_heightfield.csv",
+  "recommended_world": "SimpleUnderwater",
+  "surface_z_m": 0.0,
+  "seabed_z_mode": "seabed_z_m = -depth_m",
+  "nominal_water_depth_m": 8.175,
+  "survey_area_note": "The KHOA bbox covers km-scale macro bathymetry. A local HoloOcean test scene can use a scaled subset or the median depth plus procedural micro-terrain.",
+  "keep_procedural_micro_terrain": [
+    "sand ripples",
+    "low ridges",
+    "mounds",
+    "sediment blankets",
+    "rock/gear/rope false positives"
+  ],
+  "replace_previous_assumptions": [
+    "arbitrary nominal water depth",
+    "arbitrary large-scale seabed slope"
+  ]
+}

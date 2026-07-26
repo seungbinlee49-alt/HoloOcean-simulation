@@ -1,0 +1,36 @@
+{
+  "survey_bbox": {
+    "lat_min": 36.685,
+    "lat_max": 36.7,
+    "lon_min": 126.125,
+    "lon_max": 126.145
+  },
+  "kigam_source": "해저지질도_25만_태안반도서부해역_1994년발간 (KIGAM 지오빅데이터 오픈플랫폼, 활용신청 수령)",
+  "deposits_type_folk_code": "S",
+  "deposits_mean_particle_class": "Very Fine Sand",
+  "deposits_mean_particle_phi_range": "3<Mean phi<4",
+  "topography_contour_lines_near_bbox_m": [
+    5.0,
+    10.0,
+    15.0,
+    20.0,
+    25.0,
+    30.0
+  ],
+  "geoacoustic_source": "APL-UW TR9407 High-Frequency Ocean Environmental Acoustic Models Handbook, Table 2 (p. IV-6), DTIC ADB199453, https://apps.dtic.mil/sti/tr/pdf/ADB199453.pdf -- standard secondary compilation of Hamilton (1980) geoacoustic sediment ratios. Literature class ratios applied to this project's own reference water values (1024 kg/m^3, 1480 m/s); not a site measurement.",
+  "hamilton_table2_mean_grain_size_phi": 3.5,
+  "hamilton_table2_density_ratio": 1.268,
+  "hamilton_table2_sound_speed_ratio": 1.0568,
+  "reference_water_density_kg_m3": 1024.0,
+  "reference_water_speed_of_sound_m_s": 1480.0,
+  "assigned_density_kg_m3": 1298,
+  "assigned_speed_of_sound_m_s": 1564,
+  "assigned_impedance_MRayl": 2.03,
+  "previous_placeholder_density_kg_m3": 1700,
+  "previous_placeholder_speed_of_sound_m_s": 1650,
+  "previous_placeholder_impedance_MRayl": 2.805,
+  "materials_csv_patched": [
+    "C:\\Users\\seung\\OneDrive\\바탕 화면\\학부연구생\\Advanced\\shipwreck_project_workspace\\10_holoocean_sim\\holoocean_2_4_dev\\engine\\Content\\Config\\materials.csv",
+    "C:\\Users\\seung\\OneDrive\\바탕 화면\\학부연구생\\Advanced\\shipwreck_project_workspace\\10_holoocean_sim\\holoocean_2_4_official_runtime\\2.4.0\\worlds\\Ocean\\materials.csv"
+  ]
+}

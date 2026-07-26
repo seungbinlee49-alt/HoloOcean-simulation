@@ -1,0 +1,91 @@
+{
+  "target": {
+    "name": "Taean-Mado bbox center",
+    "lat": 36.6925,
+    "lon": 126.13499999999999
+  },
+  "source_file": "Advanced\\shipwreck_project_workspace\\03_data\\khoa_observation_current_20260722\\reference\\khoa_buoy_status_20250818.csv",
+  "source_encoding": "cp949",
+  "csv_columns": [
+    "해양관측부이 고유번호",
+    "관측소 유형",
+    "해양관측부이 명",
+    "해양관측부이 위도",
+    "해양관측부이 경도",
+    "해양관측부이 영문명"
+  ],
+  "nearest": [
+    {
+      "obsCode": "TW_0082",
+      "station_type": "TW",
+      "name_ko": "태안항",
+      "lat": 37.006722,
+      "lon": 126.270222,
+      "name_en": "Taean",
+      "dist_to_taean_mado_center_km": 36.954
+    },
+    {
+      "obsCode": "TW_0069",
+      "station_type": "TW",
+      "name_ko": "대천해수욕장",
+      "lat": 36.274111,
+      "lon": 126.457805,
+      "name_en": "Daecheon Beach",
+      "dist_to_taean_mado_center_km": 54.747
+    },
+    {
+      "obsCode": "TW_0070",
+      "station_type": "TW",
+      "name_ko": "평택당진항",
+      "lat": 37.136666,
+      "lon": 126.540833,
+      "name_en": "Pyeontaek·Dangjin Hang",
+      "dist_to_taean_mado_center_km": 61.164
+    },
+    {
+      "obsCode": "TW_0076",
+      "station_type": "TW",
+      "name_ko": "인천항",
+      "lat": 37.389444,
+      "lon": 126.533055,
+      "name_en": "Incheon Hang",
+      "dist_to_taean_mado_center_km": 85.17
+    },
+    {
+      "obsCode": "TW_0072",
+      "station_type": "TW",
+      "name_ko": "군산항",
+      "lat": 35.984166,
+      "lon": 126.50875,
+      "name_en": "Gunsan Hang",
+      "dist_to_taean_mado_center_km": 85.582
+    },
+    {
+      "obsCode": "TW_0077",
+      "station_type": "TW",
+      "name_ko": "경인항",
+      "lat": 37.523388,
+      "lon": 126.592083,
+      "name_en": "Gyeongin Hang",
+      "dist_to_taean_mado_center_km": 100.891
+    },
+    {
+      "obsCode": "TW_0079",
+      "station_type": "TW",
+      "name_ko": "상왕등도",
+      "lat": 35.652472,
+      "lon": 126.19425,
+      "name_en": "SangWang",
+      "dist_to_taean_mado_center_km": 115.768
+    },
+    {
+      "obsCode": "TW_0080",
+      "station_type": "TW",
+      "name_ko": "우이도",
+      "lat": 34.54305556,
+      "lon": 125.8027778,
+      "name_en": "Uido",
+      "dist_to_taean_mado_center_km": 240.886
+    }
+  ]
+}

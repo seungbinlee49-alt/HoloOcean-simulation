@@ -1,0 +1,55 @@
+{
+  "created_at": "2026-07-19T02:38:50",
+  "source": {
+    "name": "KHOA / data.go.kr natural-science water depth API",
+    "api_url_without_key": "https://apis.data.go.kr/1192136/waterDepth/GetWaterDepthApiService",
+    "description": "150 m interval bathymetry points: lat, lot, dpwt."
+  },
+  "bbox": {
+    "ymin": 36.685,
+    "ymax": 36.7,
+    "xmin": 126.125,
+    "xmax": 126.145
+  },
+  "point_count": 125,
+  "water_point_count": 124,
+  "min_water_depth_filter_m": 0.5,
+  "reported_total_count": 125,
+  "depth_m": {
+    "min": -2.127,
+    "max": 19.752,
+    "mean": 8.48168,
+    "median": 8.142
+  },
+  "water_only_depth_m": {
+    "min": 0.658,
+    "max": 19.752,
+    "mean": 8.567233870967742,
+    "median": 8.1755
+  },
+  "local_extent_m": {
+    "x_min": -844.1555268492342,
+    "x_max": 825.046290217771,
+    "y_min": -802.5548608004462,
+    "y_max": 725.8687391998279,
+    "width": 1669.2018170670053,
+    "height": 1528.4236000002743
+  },
+  "water_only_local_extent_m": {
+    "x_min": -838.7106681216333,
+    "x_max": 830.4899200130818,
+    "y_min": -808.8565064513898,
+    "y_max": 719.5670935488843,
+    "width": 1669.200588134715,
+    "height": 1528.423600000274
+  },
+  "holoocean_use": {
+    "macro_depth_reference_m": 8.1755,
+    "macro_depth_range_m": [
+      0.658,
+      19.752
+    ],
+    "recommended_role": "Use as macro bathymetry / regional depth slope. Keep procedural ripple, mound, sediment and false-positive objects for SSS-scale micro terrain.",
+    "why_micro_terrain_still_needed": "KHOA grid is about 150 m interval, which is coarser than the 1-10 m seabed relief and clutter visible in SSS crops."
+  }
+}

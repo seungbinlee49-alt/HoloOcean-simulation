@@ -1,0 +1,24 @@
+__pycache__/
+*.py[cod]
+.venv*/
+venv/
+
+# Generated outputs can become very large.
+06_results/
+*.npy
+*.npz
+
+# Do not commit local HoloOcean builds, Unreal artifacts, or API keys.
+10_holoocean_sim/holoocean*/
+*.sln
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+*.uasset
+*.umap
+
+.env
+*.key
+secrets*.json
+

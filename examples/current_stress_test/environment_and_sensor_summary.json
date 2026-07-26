@@ -1,0 +1,83 @@
+{
+  "holoocean_version": "2.4.0",
+  "binary_path": "Advanced\\shipwreck_project_workspace\\10_holoocean_sim\\holoocean_2_4_official_runtime\\2.4.0\\worlds\\Ocean\\Windows\\Holodeck\\Binaries\\Win64\\Holodeck.exe",
+  "world": "FlatUnderwater",
+  "scene_proxy": "khoa_survey_scene_v1",
+  "terrain": {
+    "grid_x": 121,
+    "grid_y": 106,
+    "x_min": -140.0,
+    "x_max": 100.0,
+    "y_min": -110.0,
+    "y_max": 100.0,
+    "depth_min": 8.28703026,
+    "depth_max": 9.66732615,
+    "nominal_depth_at_survey_center_m": 8.95166621
+  },
+  "buoy_environment": {
+    "station": "TW_0082",
+    "observed_at": "2026-07-22 01:00",
+    "distance_km": 36.954,
+    "current_dir_deg": 243.3,
+    "current_speed_mps": 0.95,
+    "temperature_c": 20.77,
+    "salinity_psu": 27.9,
+    "sound_speed_mps": 1515.7045641532864,
+    "water_density_kgm3": 1019.1598144343506
+  },
+  "water_profile": "buoy",
+  "drift_proxy": {
+    "direction_deg": 243.3,
+    "raw_current_speed_mps_assuming_crsp_cm_s": 0.95,
+    "drift_scale": 1.0,
+    "applied_drift_speed_mps": 0.95,
+    "max_drift_m": 999.0,
+    "wiggle_amp_m": 0.0,
+    "yaw_amp_deg": 0.0,
+    "yaw_period_sec": 24.0,
+    "note": "Kinematic weak drift/yaw proxy from nearby buoy current; not a full hydrodynamic force model."
+  },
+  "survey_sampling": {
+    "x_min_m": -66.0,
+    "x_max_m": 26.0,
+    "y_tracks_m": [
+      -36.0,
+      -18.0,
+      0.0,
+      18.0,
+      24.0
+    ],
+    "rows_per_pass": 461,
+    "auto_rows_from_speed": true,
+    "target_speed_mps": 2.0,
+    "sonar_hz": 10,
+    "effective_row_spacing_m": 0.2,
+    "effective_speed_mps": 2.0
+  },
+  "mode": "sss_collection",
+  "sensor": {
+    "RangeBins": 1000,
+    "Azimuth": 85.0,
+    "Elevation": 0.25,
+    "RangeMin": 0.5,
+    "RangeMax": 60.0,
+    "WaterDensity": 1019.1598144343506,
+    "WaterSpeedSound": 1515.7045641532864,
+    "AddSigma": 0.0,
+    "MultSigma": 0.0,
+    "ElevationRayCount": 4,
+    "AzimuthRayCount": 8500,
+    "ViewRegion": false,
+    "ViewRays": false,
+    "ViewPoints": false,
+    "TicksPerCapture": 1,
+    "RangeRes": 0.0595,
+    "AzimuthRayRes": 0.010001176609012825,
+    "ElevationRayRes": 0.08333333333333333
+  },
+  "rows": 2305,
+  "cols": 2000,
+  "full_sss": "Advanced\\shipwreck_project_workspace\\06_results\\20260726_khoa_kigam_speed2_full_current_no_control_v1\\01_SSS\\khoa_environment_raycast_survey_full.png",
+  "pass_montage": "Advanced\\shipwreck_project_workspace\\06_results\\20260726_khoa_kigam_speed2_full_current_no_control_v1\\01_SSS\\khoa_environment_raycast_survey_5pass_montage.png",
+  "range_gain_note": "Diagnostic TVG/EGN-style image only; raw SSS is preserved separately."
+}
