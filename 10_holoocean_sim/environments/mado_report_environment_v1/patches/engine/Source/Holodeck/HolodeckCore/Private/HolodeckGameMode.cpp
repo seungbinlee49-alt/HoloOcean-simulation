@@ -129,23 +129,6 @@ FName ShipwreckProjectAcousticMaterialNameForLabel(const FString& Label) {
 	if (Label.Contains(TEXT("MadoReefRock"), ESearchCase::IgnoreCase)) {
 		return FName(TEXT("ShipwreckProjectReefRock"));
 	}
-	if (Label.Contains(TEXT("MadoHardMudGravel"), ESearchCase::IgnoreCase)
-		|| Label.Contains(TEXT("MadoShellGravel"), ESearchCase::IgnoreCase)
-		|| Label.Contains(TEXT("MadoHalstone"), ESearchCase::IgnoreCase)
-		|| Label.Contains(TEXT("MadoRiverStone"), ESearchCase::IgnoreCase)) {
-		return FName(TEXT("ShipwreckProjectHardMudGravel"));
-	}
-	if (Label.Contains(TEXT("MadoHardMud"), ESearchCase::IgnoreCase)) {
-		return FName(TEXT("ShipwreckProjectHardMud"));
-	}
-	if (Label.Contains(TEXT("MadoShellMud"), ESearchCase::IgnoreCase)
-		|| Label.Contains(TEXT("MadoDisturbedShellMud"), ESearchCase::IgnoreCase)
-		|| Label.Contains(TEXT("MadoShellPebble"), ESearchCase::IgnoreCase)) {
-		return FName(TEXT("ShipwreckProjectShellMud"));
-	}
-	if (Label.Contains(TEXT("MadoSoftMud"), ESearchCase::IgnoreCase)) {
-		return FName(TEXT("ShipwreckProjectSoftMud"));
-	}
 	if (Label.Contains(TEXT("SurveyWreck"), ESearchCase::IgnoreCase)
 		|| Label.Contains(TEXT("TorpedoMesh_Target"), ESearchCase::IgnoreCase)
 		|| Label.Contains(TEXT("TorpedoMesh_Only"), ESearchCase::IgnoreCase)) {
@@ -772,67 +755,6 @@ void SpawnShipwreckProjectLiteratureSeabedProxy(
 	UE_LOG(LogHolodeck, Log, TEXT("ShipwreckProject 2.4: spawned literature-backed low relief seabed proxy features"));
 }
 
-void SpawnShipwreckProjectMadoTerrainPatch(
-	UWorld* World,
-	const FString& Label,
-	float X,
-	float Y,
-	float YawDeg,
-	float RadiusX,
-	float RadiusY,
-	float HeightM,
-	const FLinearColor& Color) {
-	constexpr int32 Segments = 28;
-	constexpr int32 Rings = 3;
-	const float Clearance = 0.006f;
-
-	TArray<FVector> Vertices;
-	Vertices.Reserve(1 + Segments * Rings);
-	TArray<int32> Triangles;
-
-	const float CenterZ = ShipwreckProjectKhoaTerrainZAt(X, Y) + Clearance + HeightM;
-	Vertices.Add(FVector(X, Y, CenterZ));
-
-	for (int32 Ring = 1; Ring <= Rings; ++Ring) {
-		const float R = static_cast<float>(Ring) / static_cast<float>(Rings);
-		for (int32 Segment = 0; Segment < Segments; ++Segment) {
-			const float Angle = 2.0f * PI * static_cast<float>(Segment) / static_cast<float>(Segments);
-			const float Jitter = 1.0f + 0.055f * FMath::Sin((Segment + 1) * 1.91f + Ring * 0.73f);
-			const float LocalX = FMath::Cos(Angle) * RadiusX * R * Jitter;
-			const float LocalY = FMath::Sin(Angle) * RadiusY * R * (1.0f - 0.035f * FMath::Cos((Segment + 2) * 1.37f));
-			const FVector2D Rotated = ShipwreckProjectRotate2D(LocalX, LocalY, YawDeg);
-			const float Px = X + Rotated.X;
-			const float Py = Y + Rotated.Y;
-			const float EdgeFalloff = FMath::Clamp(1.0f - R * R, 0.0f, 1.0f);
-			const float Z = ShipwreckProjectKhoaTerrainZAt(Px, Py) + Clearance + HeightM * (0.22f + 0.78f * EdgeFalloff);
-			Vertices.Add(FVector(Px, Py, Z));
-		}
-	}
-
-	const int32 FirstRing = 1;
-	for (int32 Segment = 0; Segment < Segments; ++Segment) {
-		const int32 Next = (Segment + 1) % Segments;
-		Triangles.Add(0);
-		Triangles.Add(FirstRing + Segment);
-		Triangles.Add(FirstRing + Next);
-	}
-	for (int32 Ring = 2; Ring <= Rings; ++Ring) {
-		const int32 PrevStart = 1 + (Ring - 2) * Segments;
-		const int32 CurrStart = 1 + (Ring - 1) * Segments;
-		for (int32 Segment = 0; Segment < Segments; ++Segment) {
-			const int32 Next = (Segment + 1) % Segments;
-			Triangles.Add(PrevStart + Segment);
-			Triangles.Add(CurrStart + Segment);
-			Triangles.Add(CurrStart + Next);
-			Triangles.Add(PrevStart + Segment);
-			Triangles.Add(CurrStart + Next);
-			Triangles.Add(PrevStart + Next);
-		}
-	}
-
-	SpawnShipwreckProjectProceduralMesh(World, Label, Vertices, Triangles, Color);
-}
-
 void ShipwreckProjectBuildSlabOutline(
 	float LengthM,
 	float WidthM,
@@ -951,51 +873,6 @@ void SpawnShipwreckProjectMadoIrregularSlab(
 	SpawnShipwreckProjectProceduralMesh(World, Label, Vertices, Triangles, Color);
 }
 
-void SpawnShipwreckProjectMadoReportFaciesPatches(UWorld* World) {
-	struct FMadoPatch {
-		const TCHAR* Label;
-		float X;
-		float Y;
-		float YawDeg;
-		float RadiusX;
-		float RadiusY;
-		float HeightM;
-		FLinearColor Color;
-	};
-
-	const FMadoPatch Patches[] = {
-		{TEXT("ShipwreckProject_MadoSoftMud_Core_18A19A"), 0.0f, 0.0f, -4.0f, 56.0f, 46.0f, 0.018f, FLinearColor(0.27f, 0.24f, 0.18f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoShellMud_18F_SurfaceShell"), 16.0f, -7.0f, 12.0f, 19.0f, 9.5f, 0.040f, FLinearColor(0.42f, 0.39f, 0.30f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoShellMud_18H_SurfaceShellDense"), 39.0f, 25.0f, -10.0f, 22.0f, 12.0f, 0.050f, FLinearColor(0.46f, 0.43f, 0.34f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoDisturbedShellMud_18E"), -14.0f, -30.0f, 7.0f, 21.0f, 11.0f, 0.046f, FLinearColor(0.36f, 0.33f, 0.25f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoHardMud_18G"), 27.0f, -17.0f, 18.0f, 18.0f, 15.0f, 0.062f, FLinearColor(0.23f, 0.22f, 0.19f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoHardMud_19B19C_SurfaceHalstoneShell"), -42.0f, 28.0f, -16.0f, 24.0f, 14.0f, 0.068f, FLinearColor(0.31f, 0.29f, 0.24f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoHardMudGravel_WestAnomaly20m"), -38.0f, 2.0f, 4.0f, 13.0f, 11.0f, 0.100f, FLinearColor(0.20f, 0.19f, 0.17f, 1.0f)},
-		// Renamed from MadoHardMudGravel_EastAnomaly30m: the report text for this site (20x20m,
-		// expanded to 30x30m grid at N36.41.18.3 E126.08.25.6) describes only black/dark-gray
-		// hard mud to 3m depth; it does not mention gravel or river stones, unlike the west
-		// anomaly site. Using HardMudGravel here overstated the source evidence.
-		{TEXT("ShipwreckProject_MadoHardMud_EastAnomaly30m"), 42.0f, -31.0f, -9.0f, 16.0f, 13.0f, 0.095f, FLinearColor(0.22f, 0.21f, 0.18f, 1.0f)},
-		// MadoShellGravel_WestSouthTransition removed: it had no report coordinate and no
-		// defined survey grid/range, only a general directional-trend sentence (material
-		// coarsens toward the west/south reef margin from the 19-A block description). It did
-		// not meet the same evidence bar (coordinate + measured grid) as the other patches.
-	};
-
-	for (const FMadoPatch& Patch : Patches) {
-		SpawnShipwreckProjectMadoTerrainPatch(
-			World,
-			Patch.Label,
-			Patch.X,
-			Patch.Y,
-			Patch.YawDeg,
-			Patch.RadiusX,
-			Patch.RadiusY,
-			Patch.HeightM,
-			Patch.Color);
-	}
-}
-
 void SpawnShipwreckProjectMadoAnchorStoneField(UWorld* World) {
 	struct FMadoAnchorStone {
 		const TCHAR* Label;
@@ -1045,59 +922,6 @@ void SpawnShipwreckProjectMadoAnchorStoneField(UWorld* World) {
 	}
 }
 
-void SpawnShipwreckProjectMadoShellGravelScatter(UWorld* World) {
-	struct FScatterCluster {
-		const TCHAR* Prefix;
-		float X;
-		float Y;
-		float RadiusX;
-		float RadiusY;
-		int32 Count;
-		FLinearColor Color;
-	};
-
-	const FScatterCluster Clusters[] = {
-		{TEXT("ShipwreckProject_MadoShellPebble_18H"), 39.0f, 25.0f, 20.0f, 11.0f, 20, FLinearColor(0.58f, 0.55f, 0.47f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoShellPebble_19BC"), -42.0f, 28.0f, 22.0f, 13.0f, 18, FLinearColor(0.55f, 0.53f, 0.46f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoShellPebble_18E"), -14.0f, -30.0f, 19.0f, 10.0f, 14, FLinearColor(0.50f, 0.48f, 0.42f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoHalstone_WestSouth"), -48.0f, -26.0f, 17.0f, 11.0f, 14, FLinearColor(0.31f, 0.30f, 0.28f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoRiverStone_Anomaly"), 42.0f, -31.0f, 15.0f, 12.0f, 12, FLinearColor(0.28f, 0.28f, 0.27f, 1.0f)},
-	};
-
-	int32 GlobalIndex = 0;
-	for (int32 ClusterIndex = 0; ClusterIndex < UE_ARRAY_COUNT(Clusters); ++ClusterIndex) {
-		const FScatterCluster& Cluster = Clusters[ClusterIndex];
-		for (int32 LocalIndex = 0; LocalIndex < Cluster.Count; ++LocalIndex) {
-			const float T = static_cast<float>(LocalIndex + 1) * 2.399963f + ClusterIndex * 0.83f;
-			const float R = FMath::Sqrt(FMath::Frac((LocalIndex + 3) * 0.381966f + ClusterIndex * 0.217f));
-			const float LocalX = FMath::Cos(T) * Cluster.RadiusX * R;
-			const float LocalY = FMath::Sin(T) * Cluster.RadiusY * R;
-			const float X = Cluster.X + LocalX;
-			const float Y = Cluster.Y + LocalY;
-			const float Length = 0.14f + 0.32f * FMath::Frac((GlobalIndex + 2) * 0.271f);
-			const float Width = 0.06f + 0.18f * FMath::Frac((GlobalIndex + 5) * 0.193f);
-			const float Thickness = 0.018f + 0.055f * FMath::Frac((GlobalIndex + 7) * 0.149f);
-			const FString Prefix(Cluster.Prefix);
-			const bool bLargeStone =
-				Prefix.Contains(TEXT("MadoHalstone"), ESearchCase::IgnoreCase) ||
-				Prefix.Contains(TEXT("MadoRiverStone"), ESearchCase::IgnoreCase);
-			SpawnShipwreckProjectMadoIrregularSlab(
-				World,
-				FString::Printf(TEXT("%s_%02d"), Cluster.Prefix, LocalIndex + 1),
-				X,
-				Y,
-				FMath::Fmod(T * 57.2958f, 180.0f),
-				bLargeStone ? Length * 1.8f : Length,
-				bLargeStone ? Width * 1.5f : Width,
-				bLargeStone ? Thickness * 1.6f : Thickness,
-				false,
-				GlobalIndex,
-				Cluster.Color);
-			++GlobalIndex;
-		}
-	}
-}
-
 void SpawnShipwreckProjectMadoReefEdgeCues(UWorld* World) {
 	const FLinearColor ReefColor(0.25f, 0.24f, 0.22f, 1.0f);
 	const float Xs[] = {-57.0f, -54.0f, -49.0f, -42.0f};
@@ -1121,12 +945,11 @@ void SpawnShipwreckProjectMadoReefEdgeCues(UWorld* World) {
 
 void SpawnShipwreckProjectMadoReportEnvironmentCore(UWorld* World) {
 	SpawnShipwreckProjectMadoAnchorStoneField(World);
-	SpawnShipwreckProjectMadoShellGravelScatter(World);
 	SpawnShipwreckProjectMadoReefEdgeCues(World);
 	UE_LOG(
 		LogHolodeck,
 		Log,
-		TEXT("ShipwreckProject 2.4: spawned Mado report environment core active_window=120x100m facies=9_material_zones anchor_stones=16 scatter=78 reef_edge=4"));
+		TEXT("ShipwreckProject 2.4: spawned Mado report environment core active_window=120x100m facies=9_material_zones anchor_stones=16 reef_edge=4"));
 }
 
 void SpawnShipwreckProjectKhoaSmoothTerrainMesh(UWorld* World) {

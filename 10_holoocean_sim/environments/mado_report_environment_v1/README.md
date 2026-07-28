@@ -23,7 +23,6 @@ HoloOcean 2.4.0 `FlatUnderwater` world 위에 만든 100 x 120m 규모의 태안
   좌표/재질 근거는 `HolodeckRaycastSonar.cpp`의 각 zone 정의 옆 주석에 보고서 좌표와 함께 남겨뒀습니다.
 - **닻돌(anchor stone) 16기**: 보고서 유물 카탈로그의 실측 길이/폭/두께(cm)를 그대로 슬랩 지오메트리에 사용.
   배치 좌표 자체는 보고서에 없어 임의 배치이며, 이는 코드 주석에도 명시했습니다.
-- **패각/자갈/할석/강돌 산란체 78개**: 크기·개수는 절차적 생성(golden-angle scatter)이며 실측 근거는 없습니다.
 - **해류**: Mado-2호선(2011) 보고서의 실측 유속표 범위(0.0247~0.2151 m/s)를 참고해 0.115 m/s를 기본값으로 사용.
 - **수온/염분/음속/밀도**: Mado-4호선 20일 CTD 평균 실측값(`--water-profile mado_ctd`, 기본값)을 사용.
   T=20.35C, S=29.95psu, rho=1020.87 kg/m^3.
@@ -42,7 +41,7 @@ HoloOcean 2.4.0 `FlatUnderwater` world 위에 만든 100 x 120m 규모의 태안
 
 | # | 항목 | 상태 |
 | --- | --- | --- |
-| 1 | `CTF_USE_COMPLEX_AS_SIMPLE` | ✅ 지형 mesh, 닻돌/산란체 slab mesh 모두 `bUseComplexAsSimpleCollision = true` 적용 |
+| 1 | `CTF_USE_COMPLEX_AS_SIMPLE` | ✅ 지형 mesh, 닻돌/reef rock slab mesh 모두 `bUseComplexAsSimpleCollision = true` 적용 |
 | 2 | `materials.csv` 등록 | ⚠️ 아래 "재질 조회 방식" 참고 — 일반 룰과 다름 |
 | 3 | 재질 애셋 이름 일관성 | N/A — 지형은 UE Material 애셋을 쓰지 않음 (아래 참고) |
 | 4 | `wreck` 태그 | ❌ **미충족 — 이 환경에는 난파선 액터가 없습니다.** GT 마스크를 이 환경으로 뽑으면 100% 빈 마스크가 정상입니다. |
@@ -59,7 +58,7 @@ HoloOcean 2.4.0 `FlatUnderwater` world 위에 만든 100 x 120m 규모의 태안
 합성해 `Detection.material_type`에 바로 넣습니다. `GetImpedanceFromMap()`은 이 접두사를 만나면 문자열에서
 숫자를 직접 파싱해서 `materials.csv` 조회를 건너뜁니다 (`HolodeckRaycastSonar.cpp` 참고).
 
-닻돌/산란체/reef rock 등 개별 액터는 표준 흐름대로 액터 이름 매칭 → `materials.csv`의
+닻돌/reef rock 등 개별 액터는 표준 흐름대로 액터 이름 매칭 → `materials.csv`의
 `ShipwreckProjectAnchorStone`, `ShipwreckProjectReefRock` 등을 조회합니다. 이 부분은 가이드와 동일합니다.
 
 `materials.csv`에는 이 표에 없는 `M_Landscape`, `M_URockA`, `M_PreviewOceanWater` 같은 행도 섞여 있습니다.
@@ -73,13 +72,13 @@ HoloOcean 2.4.0 `FlatUnderwater` world 위에 만든 100 x 120m 규모의 태안
 | `ShipwreckProjectSeabed` | 1298 | 1564 | 재질 판정 실패 시 fallback (정상 동작에서는 거의 안 씀) |
 | `ShipwreckProjectAnchorStone` | 2600 | 3800 | 닻돌 16기 |
 | `ShipwreckProjectReefRock` | 2700 | 4500 | reef edge cue 4개 |
-| `ShipwreckProjectClutter` | 3000 | 5000 | gear/rope, rock mound류 혼동 객체 |
-| `ShipwreckProjectWreck` | 1100 | 1983 | **현재 씬에 해당 액터가 없어 실제로는 안 쓰임** — 난파선 추가 시를 대비한 값 |
+| `ShipwreckProjectClutter` | 3000 | 5000 | **이 환경에서는 안 쓰임** — `HolodeckGameMode.cpp`가 같이 서빙하는 다른(구) scene preset의 gear/rope, rock mound 액터용. `mado_report_environment_v1` 코드 경로에서는 도달 불가 |
+| `ShipwreckProjectWreck` | 1100 | 1983 | **이 환경에서는 안 쓰임** — 같은 이유. 난파선 액터를 추가하면 그 이름 매칭 규칙(`SurveyWreck`/`TorpedoMesh_*`)이 그대로 적용됨 |
 | `ShipwreckProjectSoftMud`/`ShellMud`/`HardMud`/`HardMudGravel` | — | — | 지형 블렌딩에서만 쓰이는 값이며 C++ 상수로 직접 박혀 있음 (`HolodeckRaycastSonar.cpp` 내 `SoftMudZ` 등). CSV 행은 참고용으로만 남겨뒀고, 실제로는 조회되지 않음 |
 
 ## 알려진 제약 (인수인계 시 바로 알아야 할 것)
 
-1. **난파선 액터가 없습니다.** 이 환경은 해저 지형/재질/닻돌/산란체 구성만 담당합니다. GT 마스크가 필요하면
+1. **난파선 액터가 없습니다.** 이 환경은 해저 지형/재질/닻돌 구성만 담당합니다. GT 마스크가 필요하면
    별도로 `wreck` 태그를 가진 액터를 배치해야 합니다.
 2. **지형이 평탄하지 않습니다.** SSS 쪽 slant→ground 보정 로직이 단일 고도를 가정한다면 사전 협의가 필요합니다
    (SCENE_INTEGRATION_GUIDE.md §4.3).
@@ -97,7 +96,7 @@ HoloOcean 2.4.0 `FlatUnderwater` world 위에 만든 100 x 120m 규모의 태안
 
 `patches/engine` 아래 파일을 HoloOcean 2.4.0 소스의 같은 상대경로에 덮어쓰고 다시 빌드합니다.
 
-- `Source/Holodeck/HolodeckCore/Private/HolodeckGameMode.cpp` — 지형/닻돌/산란체/reef cue 스폰
+- `Source/Holodeck/HolodeckCore/Private/HolodeckGameMode.cpp` — 지형/닻돌/reef cue 스폰
 - `Source/Holodeck/HolodeckCore/Private/HolodeckRaycastSonar.cpp` — 재질/임피던스 판정 (base raycast sensor 공용 클래스)
 - `Source/Holodeck/HolodeckCore/Private/ShipwreckKhoaSmoothTerrainData.generated.h` — KHOA heightfield 데이터
 - `Content/Config/materials.csv` — 위 표의 재질 물성

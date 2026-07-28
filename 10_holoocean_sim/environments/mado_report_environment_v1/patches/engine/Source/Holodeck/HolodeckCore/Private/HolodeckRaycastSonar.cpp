@@ -586,27 +586,6 @@ SonarDetection UHolodeckRaycastSonar::ComputeDetection(
 			Detection.material_type = TEXT("ShipwreckProjectReefRock");
 			return Detection;
 		}
-		if (ActorName.Contains(TEXT("MadoHardMudGravel"), ESearchCase::IgnoreCase)
-			|| ActorName.Contains(TEXT("MadoShellGravel"), ESearchCase::IgnoreCase)
-			|| ActorName.Contains(TEXT("MadoHalstone"), ESearchCase::IgnoreCase)
-			|| ActorName.Contains(TEXT("MadoRiverStone"), ESearchCase::IgnoreCase)) {
-			Detection.material_type = TEXT("ShipwreckProjectHardMudGravel");
-			return Detection;
-		}
-		if (ActorName.Contains(TEXT("MadoHardMud"), ESearchCase::IgnoreCase)) {
-			Detection.material_type = TEXT("ShipwreckProjectHardMud");
-			return Detection;
-		}
-		if (ActorName.Contains(TEXT("MadoShellMud"), ESearchCase::IgnoreCase)
-			|| ActorName.Contains(TEXT("MadoDisturbedShellMud"), ESearchCase::IgnoreCase)
-			|| ActorName.Contains(TEXT("MadoShellPebble"), ESearchCase::IgnoreCase)) {
-			Detection.material_type = TEXT("ShipwreckProjectShellMud");
-			return Detection;
-		}
-		if (ActorName.Contains(TEXT("MadoSoftMud"), ESearchCase::IgnoreCase)) {
-			Detection.material_type = TEXT("ShipwreckProjectSoftMud");
-			return Detection;
-		}
 		if (ActorName.Contains(TEXT("ShipwreckProject_Seafloor"), ESearchCase::IgnoreCase)
 			|| ActorName.Contains(TEXT("ShipwreckProject_SeabedProxy"), ESearchCase::IgnoreCase)
 			|| ActorName.Contains(TEXT("KhoaSmoothBathymetryTerrain"), ESearchCase::IgnoreCase)
