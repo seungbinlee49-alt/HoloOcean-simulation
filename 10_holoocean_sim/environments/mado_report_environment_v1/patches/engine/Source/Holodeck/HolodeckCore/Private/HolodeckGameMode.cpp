@@ -413,53 +413,6 @@ void SpawnShipwreckProjectMeshActor(
 	}
 }
 
-void SpawnShipwreckProjectAcousticHull(
-	UWorld* World,
-	UStaticMesh* Cube,
-	const FString& Prefix,
-	float BaseX,
-	float BaseY,
-	float BaseZ,
-	float YawDeg,
-	float Length,
-	float Width,
-	float Height) {
-	SpawnShipwreckProjectBox(
-		World,
-		Cube,
-		Prefix + TEXT("_Keel"),
-		ShipwreckProjectLocalLocation(0.0f, 0.0f, BaseZ + 0.18f * Height, BaseX, BaseY, YawDeg),
-		ShipwreckProjectRotation(0.0f, YawDeg, 0.0f),
-		FVector(Length, 0.18f, 0.16f * Height));
-
-	for (int32 Index = 0; Index < 8; ++Index) {
-		const float X = -0.42f * Length + Index * (0.84f * Length / 7.0f);
-		const float RibWidth = Width * (0.62f + 0.34f * FMath::Sin((Index + 1) * PI / 9.0f));
-		SpawnShipwreckProjectBox(
-			World,
-			Cube,
-			FString::Printf(TEXT("%s_Rib_%02d"), *Prefix, Index + 1),
-			ShipwreckProjectLocalLocation(X, 0.0f, BaseZ + 0.46f * Height, BaseX, BaseY, YawDeg),
-			ShipwreckProjectRotation(0.0f, YawDeg + 90.0f, 0.0f),
-			FVector(RibWidth, 0.16f, 0.22f * Height));
-	}
-
-	SpawnShipwreckProjectBox(
-		World,
-		Cube,
-		Prefix + TEXT("_PortRail"),
-		ShipwreckProjectLocalLocation(0.0f, -0.5f * Width, BaseZ + 0.55f * Height, BaseX, BaseY, YawDeg),
-		ShipwreckProjectRotation(0.0f, YawDeg, 0.0f),
-		FVector(Length, 0.16f, 0.20f * Height));
-	SpawnShipwreckProjectBox(
-		World,
-		Cube,
-		Prefix + TEXT("_StarboardRail"),
-		ShipwreckProjectLocalLocation(0.0f, 0.5f * Width, BaseZ + 0.55f * Height, BaseX, BaseY, YawDeg),
-		ShipwreckProjectRotation(0.0f, YawDeg, 0.0f),
-		FVector(Length, 0.16f, 0.20f * Height));
-}
-
 void SpawnShipwreckProjectIntactWreck(
 	UWorld* World,
 	UStaticMesh* Cube,
