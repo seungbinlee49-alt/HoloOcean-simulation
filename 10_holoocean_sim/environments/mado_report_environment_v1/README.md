@@ -17,10 +17,24 @@ HoloOcean 2.4.0 `FlatUnderwater` world 위에 만든 100 x 120m 규모의 태안
   Y∈[-120,110] 범위로 자른 서브셋, `--grid-x 401 --grid-y 351 --smooth-sigma-cells 3.5 --smooth-passes 5`).
 - **해저 재질**: 조사구역 전체는 KIGAM 표층퇴적물 판정 기반 `Very Fine Sand`(density 1298 kg/m^3, sound speed
   1564 m/s, APL-UW TR9407 Table 2 Hamilton ratio 사용, `03_data/kigam_marine_geology_shp_1994` 참고)를
-  baseline으로 깔고, 그 위에 보고서에 실측 좌표/구역 번호가 있는 9개 구역(서이상/동이상/18F/18H/19-B/C/18E 등)에만
+  baseline으로 깔고, 그 위에 보고서에 실측 좌표/구역 번호가 있는 9개 구역(서이상/동이상/18F/18H/18E/18G/19-B/19-C)에만
   뻘(SoftMud/ShellMud/HardMud/HardMudGravel) 재질을 blend합니다. 구역 경계는 완벽한 타원이 아니라
   domain-warp 노이즈로 불규칙하게 처리했고, 구역 내부에도 2-옥타브 텍스처 노이즈를 추가했습니다.
   좌표/재질 근거는 `HolodeckRaycastSonar.cpp`의 각 zone 정의 옆 주석에 보고서 좌표와 함께 남겨뒀습니다.
+  - **구역 크기**: 보고서 원문("1개의 조사구역을 50×20m으로 설정하고 그리드를 설치")에 따라 18-F/18-H/18-E/18-G/
+    19-B/19-C는 전부 50×20m 직사각형(타원 반경 25×10으로 근사)입니다. 서쪽 이상신호는 20×20m(반경 10×10),
+    동쪽 이상신호는 추가 유물 발견으로 20×20m에서 30×30m로 확장(반경 15×15)됐다고 원문에 명시돼 있습니다.
+    19-B와 19-C는 원문에 각각 별개의 50×20m 구역으로 나오는데 예전 코드는 이 둘을 하나의 타원으로 합쳐놨던
+    오류가 있어 분리했습니다 (둘의 상대적 배치 자체는 원문에 없어 인접 배치로 근사).
+  - **구역별 재질 임피던스**: 각 구역의 밀도/음속 값은 Hamilton(1980) 지음향 모델
+    (`docs/presentation_assets/sources/APL_UW_TR9407_Table2_original_scan.png`, APL-UW TR9407 Table 2
+    원본 스캔)에서 그 구역의 **표층**(SSS가 실제로 보는 깊이) 텍스처 묘사와 가장 가까운 입도(grain size, Mz phi)
+    행을 찾아 매핑한 값입니다. 예를 들어 18-H는 원문에 "패각이 다수 함유된 무른 개흙"이라 18-F(패각 보통)보다
+    한 단계 거친 Mz 5.0(Sandy Silt, Gravelly Mud) 행을 썼고, 서쪽 이상신호는 "자갈+강돌 섞인 단단한 개흙"이라
+    Mz 1.0(Gravelly Muddy Sand) 행을 썼습니다. 어느 구역에 어느 표 행을 쓸지 고르는 것 자체는 판단이 들어가지만,
+    표의 숫자 자체는 원본 스캔에서 그대로 옮긴 값이라 자체 추정치가 아닙니다. 정확한 행 선택 근거는
+    `HolodeckRaycastSonar.cpp`의 `RaycastMadoReportTerrainImpedanceMaterialAtClientXY` 함수 주석에 구역별로
+    남겨뒀습니다.
 - **닻돌(anchor stone) 16기**: 보고서 유물 카탈로그의 실측 길이/폭/두께(cm)를 그대로 슬랩 지오메트리에 사용.
   배치 좌표 자체는 보고서에 없어 임의 배치이며, 이는 코드 주석에도 명시했습니다.
 - **해류**: Mado-2호선(2011) 보고서의 실측 유속표 범위(0.0247~0.2151 m/s)를 참고해 0.115 m/s를 기본값으로 사용.
@@ -74,7 +88,7 @@ HoloOcean 2.4.0 `FlatUnderwater` world 위에 만든 100 x 120m 규모의 태안
 | `ShipwreckProjectReefRock` | 2700 | 4500 | reef edge cue 4개 |
 | `ShipwreckProjectClutter` | 3000 | 5000 | **이 환경에서는 안 쓰임** — `HolodeckGameMode.cpp`가 같이 서빙하는 다른(구) scene preset의 gear/rope, rock mound 액터용. `mado_report_environment_v1` 코드 경로에서는 도달 불가 |
 | `ShipwreckProjectWreck` | 1100 | 1983 | **이 환경에서는 안 쓰임** — 같은 이유. 난파선 액터를 추가하면 그 이름 매칭 규칙(`SurveyWreck`/`TorpedoMesh_*`)이 그대로 적용됨 |
-| `ShipwreckProjectSoftMud`/`ShellMud`/`HardMud`/`HardMudGravel` | — | — | 지형 블렌딩에서만 쓰이는 값이며 C++ 상수로 직접 박혀 있음 (`HolodeckRaycastSonar.cpp` 내 `SoftMudZ` 등). CSV 행은 참고용으로만 남겨뒀고, 실제로는 조회되지 않음 |
+| `ShipwreckProjectSoftMud`/`ShellMud`/`HardMud`/`HardMudGravel` | — | — | 지형 블렌딩에서만 쓰이는 값이며 C++ 상수로 직접 박혀 있음. CSV의 4행은 대표값 요약이고, 실제 코드는 구역마다 별도 상수(`SoftMudZ`, `ShellMud18FZ`, `ShellMud18HZ`, `DisturbedShellMud18EZ`, `HardMudPlainZ`, `HardMud19BCZ`, `HardMudGravelWestZ`)를 씀 — 아래 "구역별 재질 임피던스" 참고. CSV 행 자체는 조회되지 않음 |
 
 ## 알려진 제약 (인수인계 시 바로 알아야 할 것)
 

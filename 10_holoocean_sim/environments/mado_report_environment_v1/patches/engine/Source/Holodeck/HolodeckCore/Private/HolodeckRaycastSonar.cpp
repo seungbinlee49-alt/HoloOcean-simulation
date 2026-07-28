@@ -152,15 +152,43 @@ FString RaycastMadoReportTerrainFaciesMaterialAtClientXY(float X, float Y) {
 }
 
 FString RaycastMadoReportTerrainImpedanceMaterialAtClientXY(float X, float Y, float GroundRangeM) {
-	// Target impedances match the real, evidence-cited discrete materials in materials.csv
-	// (ShipwreckProjectSoftMud/ShellMud/HardMud/HardMudGravel), not the earlier "*Matrix"
-	// placeholders, which clustered within ~3% of each other and made every zone nearly
-	// indistinguishable from the Fine Sand baseline regardless of blend strength.
-	constexpr float FineSandZ = 1298.0f * 1564.0f;
-	constexpr float SoftMudZ = 1180.0f * 1485.0f;
-	constexpr float ShellMudZ = 1350.0f * 1580.0f;
-	constexpr float HardMudZ = 1600.0f * 1650.0f;
-	constexpr float HardMudGravelZ = 2200.0f * 2400.0f;
+	// Target impedances are read directly from the primary source scan
+	// (docs/presentation_assets/sources/APL_UW_TR9407_Table2_original_scan.png, Hamilton 1980
+	// geoacoustic model as tabulated in APL-UW TR9407 Table 2, "Model inputs in terms of sediment
+	// name"). Each zone below is mapped to the Hamilton grain-size row that best matches its
+	// *surface* (top few cm -- the only depth an SSS raycast actually sees) description in the
+	// 2021 report text, not its full sub-surface stratigraphy. Reference water values 1024
+	// kg/m^3, 1480 m/s (same as the FineSand baseline derivation).
+	constexpr float FineSandZ = 1298.0f * 1564.0f; // Mz 3.5 Very Fine Sand (rho 1.268, nu 1.0568)
+	// Mz 7.5 Very Fine Silt (rho 1.147, nu 0.9837): report only says "무른 개흙" (soft mud) for
+	// the 18-A~19-A general background, no shell/gravel mentioned -> finest/purest mud row.
+	constexpr float SoftMudZ = 1175.0f * 1456.0f;
+	// Mz 5.5 Medium Silt/Sand-Silt-Clay (rho 1.149, nu 0.9885): 18-F surface (top 20cm) is
+	// "패각과 무른개흙" (shell + soft mud) -- moderate shell content, one step coarser than pure
+	// soft mud.
+	constexpr float ShellMud18FZ = 1177.0f * 1463.0f;
+	// Mz 5.0 Sandy Silt/Gravelly Mud (rho 1.169, nu 0.9999): 18-H surface is "패각이 다수 함유된
+	// 무른 개흙" (shell content explicitly denser/more abundant than 18-F) -> the coarsest row
+	// still inside the mud family, whose own name ("Gravelly Mud") matches a shell-hash-rich mud.
+	constexpr float ShellMud18HZ = 1197.0f * 1480.0f;
+	// Mz 6.0 Sandy Mud (rho 1.149, nu 0.9873): 18-E surface (top ~1m) is a disturbed layer of
+	// pine needles, shell, and modern refuse -- mixed but not shell-dominant like 18-H.
+	constexpr float DisturbedShellMud18EZ = 1177.0f * 1461.0f;
+	// Mz 6.5 Fine Silt/Clayey Silt (rho 1.148, nu 0.9861): plain "단단한 개흙" (firm mud) with no
+	// shell/gravel mentioned -- used for both 18-G and the East anomaly, which the report
+	// describes identically (black/dark-gray firm mud, no coarse component). Hamilton's table has
+	// no separate firmness axis, so "firm" mud is represented by the same grain-size row as other
+	// shell/gravel-free mud, not a heavier one.
+	constexpr float HardMudPlainZ = 1176.0f * 1459.0f;
+	// Mz 4.5 Coarse Silt (rho 1.195, nu 1.0179): 19-B/19-C are "할석+패각 섞인 단단한 개흙" (firm
+	// mud mixed with broken rock rubble + shell) -- coarser than plain firm mud, but the rubble is
+	// described as a minor admixture, not a gravel-dominant matrix, so this stops short of the
+	// gravel rows used for the anomaly sites.
+	constexpr float HardMud19BCZ = 1224.0f * 1506.0f;
+	// Mz 1.0 Gravelly Muddy Sand (rho 2.151, nu 1.2241): West anomaly is explicitly "자갈+강돌
+	// 섞인 단단한 개흙" (gravel + river-stone mixed into firm mud) -- real coarse clasts, but
+	// still mud-matrix-dominant per the report text, not a pure gravel bed.
+	constexpr float HardMudGravelWestZ = 2151.0f * 1812.0f;
 
 	const float ActiveX = 1.0f - RaycastSmoothStep(60.0f, 72.0f, FMath::Abs(X));
 	const float ActiveY = 1.0f - RaycastSmoothStep(50.0f, 62.0f, FMath::Abs(Y));
@@ -169,19 +197,26 @@ FString RaycastMadoReportTerrainImpedanceMaterialAtClientXY(float X, float Y, fl
 	float Z = FMath::Lerp(FineSandZ, SoftMudZ, ActiveWeight);
 	float MaxZoneWeight = ActiveWeight;
 
-	// West anomaly (N36.41.17.9 E126.08.24.4, real 20x20m grid): report text describes gravel
-	// and river stones in the hard mud layer -> HardMudGravel.
-	const float WestAnomalyW = RaycastMadoZoneWeight(X, Y, -38.0f, 2.0f, 4.0f, 13.0f, 11.0f);
-	// East anomaly (N36.41.18.3 E126.08.25.6, real 20x20m->30x30m grid): report text describes
-	// only black/dark-gray hard mud, no gravel/river stones -> HardMud (not HardMudGravel).
-	const float EastAnomalyW = RaycastMadoZoneWeight(X, Y, 42.0f, -31.0f, -9.0f, 16.0f, 13.0f);
+	// West anomaly (N36.41.17.9 E126.08.24.4, real 20x20m grid per report text) -> radius 10x10.
+	const float WestAnomalyW = RaycastMadoZoneWeight(X, Y, -38.0f, 2.0f, 4.0f, 10.0f, 10.0f);
+	// East anomaly (N36.41.18.3 E126.08.25.6, report text: grid expanded 10m each side from
+	// 20x20m to a 30x30m grid after additional finds) -> radius 15x15.
+	const float EastAnomalyW = RaycastMadoZoneWeight(X, Y, 42.0f, -31.0f, -9.0f, 15.0f, 15.0f);
 	// WestSouthTransition zone removed: no report coordinate or measured survey grid, only a
 	// general directional-trend sentence from the 19-A block description.
-	const float NineteenBCW = RaycastMadoZoneWeight(X, Y, -42.0f, 28.0f, -16.0f, 24.0f, 14.0f);
-	const float HardMudW = RaycastMadoZoneWeight(X, Y, 27.0f, -17.0f, 18.0f, 18.0f, 15.0f);
-	const float Shell18FW = RaycastMadoZoneWeight(X, Y, 16.0f, -7.0f, 12.0f, 19.0f, 9.5f);
-	const float Shell18HW = RaycastMadoZoneWeight(X, Y, 39.0f, 25.0f, -10.0f, 22.0f, 12.0f);
-	const float Disturbed18EW = RaycastMadoZoneWeight(X, Y, -14.0f, -30.0f, 7.0f, 21.0f, 11.0f);
+	// 19-B and 19-C are two separate 50x20m excavation blocks (report: "1개의 조사구역을
+	// 50x20m으로 설정"), not one combined zone. The report does not give their relative layout,
+	// so they are placed as two adjacent 50x20m rectangles around the same approximate center
+	// used previously; only their existence/size/material is report-evidenced, not this exact
+	// adjacency.
+	const float NineteenBW = RaycastMadoZoneWeight(X, Y, -42.0f, 17.0f, -16.0f, 25.0f, 10.0f);
+	const float NineteenCW = RaycastMadoZoneWeight(X, Y, -42.0f, 39.0f, -16.0f, 25.0f, 10.0f);
+	// 18-F, 18-H, 18-E, 18-G are each a real 50x20m excavation block (same report sentence as
+	// above) -> radius 25x10.
+	const float HardMud18GW = RaycastMadoZoneWeight(X, Y, 27.0f, -17.0f, 18.0f, 25.0f, 10.0f);
+	const float Shell18FW = RaycastMadoZoneWeight(X, Y, 16.0f, -7.0f, 12.0f, 25.0f, 10.0f);
+	const float Shell18HW = RaycastMadoZoneWeight(X, Y, 39.0f, 25.0f, -10.0f, 25.0f, 10.0f);
+	const float Disturbed18EW = RaycastMadoZoneWeight(X, Y, -14.0f, -30.0f, 7.0f, 25.0f, 10.0f);
 
 	// Blend strength: 0.08-0.10 was too weak to register at all (measured, no detectable
 	// contrast). 0.95 overshot the other way -- real SSS reference imagery shows the seabed as
@@ -190,18 +225,20 @@ FString RaycastMadoReportTerrainImpedanceMaterialAtClientXY(float X, float Y, fl
 	// 0.35 keeps zones detectable (real, evidence-based contrast) without them visually
 	// dominating the frame the way flat objects never should.
 	constexpr float BlendStrength = 0.35f;
-	Z = RaycastBlendImpedance(Z, ShellMudZ, Shell18FW, BlendStrength);
-	Z = RaycastBlendImpedance(Z, ShellMudZ, Shell18HW, BlendStrength);
-	Z = RaycastBlendImpedance(Z, ShellMudZ, Disturbed18EW, BlendStrength);
-	Z = RaycastBlendImpedance(Z, HardMudZ, HardMudW, BlendStrength);
-	Z = RaycastBlendImpedance(Z, HardMudGravelZ, NineteenBCW, BlendStrength);
-	Z = RaycastBlendImpedance(Z, HardMudGravelZ, WestAnomalyW, BlendStrength);
-	Z = RaycastBlendImpedance(Z, HardMudZ, EastAnomalyW, BlendStrength);
+	Z = RaycastBlendImpedance(Z, ShellMud18FZ, Shell18FW, BlendStrength);
+	Z = RaycastBlendImpedance(Z, ShellMud18HZ, Shell18HW, BlendStrength);
+	Z = RaycastBlendImpedance(Z, DisturbedShellMud18EZ, Disturbed18EW, BlendStrength);
+	Z = RaycastBlendImpedance(Z, HardMudPlainZ, HardMud18GW, BlendStrength);
+	Z = RaycastBlendImpedance(Z, HardMud19BCZ, NineteenBW, BlendStrength);
+	Z = RaycastBlendImpedance(Z, HardMud19BCZ, NineteenCW, BlendStrength);
+	Z = RaycastBlendImpedance(Z, HardMudGravelWestZ, WestAnomalyW, BlendStrength);
+	Z = RaycastBlendImpedance(Z, HardMudPlainZ, EastAnomalyW, BlendStrength);
 
 	MaxZoneWeight = FMath::Max(MaxZoneWeight, WestAnomalyW);
 	MaxZoneWeight = FMath::Max(MaxZoneWeight, EastAnomalyW);
-	MaxZoneWeight = FMath::Max(MaxZoneWeight, NineteenBCW);
-	MaxZoneWeight = FMath::Max(MaxZoneWeight, HardMudW);
+	MaxZoneWeight = FMath::Max(MaxZoneWeight, NineteenBW);
+	MaxZoneWeight = FMath::Max(MaxZoneWeight, NineteenCW);
+	MaxZoneWeight = FMath::Max(MaxZoneWeight, HardMud18GW);
 	MaxZoneWeight = FMath::Max(MaxZoneWeight, Shell18FW);
 	MaxZoneWeight = FMath::Max(MaxZoneWeight, Shell18HW);
 	MaxZoneWeight = FMath::Max(MaxZoneWeight, Disturbed18EW);
