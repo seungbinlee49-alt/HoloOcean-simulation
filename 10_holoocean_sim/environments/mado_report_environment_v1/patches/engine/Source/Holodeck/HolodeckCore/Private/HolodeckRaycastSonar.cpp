@@ -251,8 +251,13 @@ FString RaycastMadoReportTerrainImpedanceMaterialAtClientXY(float X, float Y, fl
 	// Two-octave smooth noise (fine mottling + coarser patchiness) for internal texture within
 	// a zone, replacing the earlier single-cell hash (blocky, and amplitude was 0.04-0.1% --
 	// essentially invisible). Real sediment facies are not uniform even within one class.
-	const float FineNoise = RaycastValueNoise(X, Y, 1.6f);
-	const float CoarseNoise = RaycastValueNoise(X * 0.4f + 13.0f, Y * 0.4f + 7.0f, 1.6f);
+	// Cell size matters relative to the sensor's own resolution: at RangeBins=1000 over ~50m,
+	// one pixel is ~5cm in range; a 1.6m noise cell used previously spanned ~32 range pixels x
+	// ~8 along-track pixels, reading as blurry blotches rather than grain. 0.3m/1.0m keeps the
+	// two-octave structure but at a scale that decorrelates over a handful of pixels, closer to
+	// real backscatter speckle correlation length.
+	const float FineNoise = RaycastValueNoise(X, Y, 0.3f);
+	const float CoarseNoise = RaycastValueNoise(X * 0.3f + 13.0f, Y * 0.3f + 7.0f, 0.3f);
 	const float TextureNoise = ((FineNoise * 0.6f + CoarseNoise * 0.4f) - 0.5f) * 2.0f;
 	// Near nadir (small ground range from the sensor track), the slant-range-to-ground-range
 	// mapping is nearly singular (d(ground_range)/d(slant_range) -> large as slant_range ->
