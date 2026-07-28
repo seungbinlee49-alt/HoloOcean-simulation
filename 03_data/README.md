@@ -25,6 +25,18 @@
 `khoa_observation_current_20260722`
 
 - 태안/마도 인근 부이 관측 요약
-- 수온/염분 기반 `WaterDensity`, `WaterSpeedSound` 계산에 사용
-- 유향/유속은 기본 baseline이 아니라 optional drift/yaw proxy와 stress-test에 사용
+- `mado_report_environment_v1`은 이 부이의 원시 유속을 그대로 쓰지 않고, Mado-2호선(2011) 보고서 실측
+  유속표(0.0247~0.2151 m/s)를 근거로 한 0.115 m/s를 기본 조류 속도로 사용합니다. 방향 proxy로만 부이 관측을
+  참고합니다.
+
+## 2021 마도해역 시굴조사 보고서 (Taean Mado 2021 Report)
+
+`taean_mado_2021_report_analysis/2021_taean_mado_report_extracted_text.txt`
+
+- 문화재청 2021년 태안 마도해역 해양문화재 시굴조사 보고서에서 추출한 텍스트 (원본 PDF는 포함하지 않음)
+- `mado_report_environment_v1`의 9개 해저 재질 구역(서이상/동이상/18F/18H/19-B/C/18E 등) 좌표·재질 기술,
+  닻돌 16기의 실측 치수(길이/폭/두께), Mado-2호선 실측 유속표의 1차 근거 문서입니다.
+- 각 구역/치수가 코드에서 어떻게 반영됐는지는
+  `10_holoocean_sim/environments/mado_report_environment_v1/README.md`와
+  `HolodeckRaycastSonar.cpp`/`HolodeckGameMode.cpp` 내 인라인 주석에 보고서 좌표와 함께 남겨뒀습니다.
 

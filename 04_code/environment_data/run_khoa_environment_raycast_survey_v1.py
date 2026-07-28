@@ -21,6 +21,7 @@ if str(VIS_DIR) not in sys.path:
 
 from check_khoa_survey_ground_contact_24 import (  # noqa: E402
     BINARY_PATH,
+    OBJECTS,
     load_terrain,
     object_rows,
     terrain_depth_at,
@@ -129,6 +130,132 @@ def default_water_environment() -> BuoyEnvironment:
         sound_speed_mps=1480.0,
         water_density_kgm3=997.0,
     )
+
+
+def apply_mado_ctd_overrides(env: BuoyEnvironment, depth_m: float) -> BuoyEnvironment:
+    """Override temperature/salinity/density/sound-speed with the real 20-day CTD average
+    measured at the Mado-4ho excavation site (2015-09-19..2015-10-09, 10-min interval,
+    total-average row: turbidity 63.53 NTU, depth 10.14 m, T=20.35 C, pH=7.93, S=29.95 psu,
+    rho=1020.87 kg/m3). This is an in-situ measurement from the actual Mado wreck site, closer
+    and more direct than the distant (37 km) Taean-port buoy reading. Current direction/speed
+    fields are left untouched (direction still uses the buoy proxy elsewhere in this script)."""
+    temp_c = 20.35
+    salinity = 29.95
+    sound_speed = sound_speed_mackenzie(temp_c, salinity, depth_m)
+    env.station = "mado_4ho_ctd_20150919_1009_20day_avg"
+    env.observed_at = "2015-09-19..2015-10-09 (20-day, 10-min interval mean)"
+    env.distance_km = 0.0
+    env.temperature_c = temp_c
+    env.salinity_psu = salinity
+    env.sound_speed_mps = sound_speed
+    env.water_density_kgm3 = 1020.87
+    return env
+
+
+def flat_object_rows(flat_depth_m: float) -> list[dict]:
+    """Object placement table for a non-KHOA flat-seabed baseline.
+
+    This keeps the same survey objects and XY/yaw layout while removing KHOA
+    bathymetry from the placement calculation. It is used only for fair
+    ablation runs where the question is "what changes when environment inputs
+    are not applied?"
+    """
+    depth = float(flat_depth_m)
+    terrain_z = -depth
+    rows = []
+    for name, kind, x, y, yaw in OBJECTS:
+        clearance = 0.015 if kind == "wreck" else 0.006
+        rows.append(
+            {
+                "name": name,
+                "class": kind,
+                "x_m": x,
+                "y_m": y,
+                "yaw_deg": yaw,
+                "khoa_depth_m": depth,
+                "terrain_z_m": terrain_z,
+                "expected_bottom_z_m": terrain_z + clearance,
+                "expected_clearance_m": clearance,
+                "placement_policy": "flat seabed baseline: UE bounds bottom snapped to flat z + clearance",
+            }
+        )
+    return rows
+
+
+MADO_REPORT_MAJOR_OBJECTS = [
+    ("soft_mud_core", "mado_facies_soft_mud", 0.0, 0.0, -4.0, 0.006),
+    ("shell_mud_18F", "mado_facies_shell_mud", 16.0, -7.0, 12.0, 0.006),
+    ("shell_mud_18H_dense", "mado_facies_shell_mud", 39.0, 25.0, -10.0, 0.006),
+    ("disturbed_shell_mud_18E", "mado_facies_disturbed_shell_mud", -14.0, -30.0, 7.0, 0.006),
+    ("hard_mud_18G", "mado_facies_hard_mud", 27.0, -17.0, 18.0, 0.006),
+    ("hard_mud_halstone_shell_19BC", "mado_facies_hard_mud_shell_halstone", -42.0, 28.0, -16.0, 0.006),
+    ("hard_mud_gravel_west_anomaly", "mado_facies_hard_mud_gravel", -38.0, 2.0, 4.0, 0.006),
+    # East anomaly report text (20x20m->30x30m grid, N36.41.18.3 E126.08.25.6) only describes
+    # black/dark-gray hard mud to 3m depth, no gravel/river stones - unlike the west anomaly.
+    ("hard_mud_east_anomaly", "mado_facies_hard_mud", 42.0, -31.0, -9.0, 0.006),
+    # shell_gravel_west_south_transition removed: no report coordinate or measured survey grid,
+    # only a general directional-trend sentence from the 19-A block description.
+    ("anchor_176_Mado18_38", "mado_anchor_stone", -50.0, -38.0, 17.0, 0.008),
+    ("anchor_177_Mado18_64", "mado_anchor_stone", -36.0, -17.0, -26.0, 0.008),
+    ("anchor_178_Mado18_103", "mado_anchor_stone", -18.0, -37.0, 41.0, 0.008),
+    ("anchor_179_Mado18_104", "mado_anchor_stone", -6.0, -29.0, -12.0, 0.008),
+    ("anchor_180_Mado18_105", "mado_anchor_stone", 8.0, -36.0, 58.0, 0.008),
+    ("anchor_181_Mado18_124", "mado_anchor_stone", 20.0, -14.0, 8.0, 0.008),
+    ("anchor_182_Mado18_135_18HCluster", "mado_anchor_stone", 31.0, 18.0, -38.0, 0.008),
+    ("anchor_183_Mado18_136_18HCluster", "mado_anchor_stone", 41.0, 25.0, 24.0, 0.008),
+    ("anchor_184_Mado18_137_18HCluster", "mado_anchor_stone", 36.0, 33.0, -10.0, 0.008),
+    ("anchor_185_Mado18_141_18HCluster", "mado_anchor_stone", 49.0, 19.0, 44.0, 0.008),
+    ("anchor_186_Mado18_142_18HCluster", "mado_anchor_stone", 29.0, 29.0, 77.0, 0.008),
+    ("anchor_187_Mado18_143_18HCluster", "mado_anchor_stone", 48.0, 35.0, -52.0, 0.008),
+    ("anchor_188_Mado19_33", "mado_anchor_stone", -40.0, 31.0, 32.0, 0.008),
+    ("anchor_189_Mado18_168_east_anomaly", "mado_anchor_stone", 44.0, -25.0, 13.0, 0.008),
+    ("anchor_190_Mado18_173_east_anomaly", "mado_anchor_stone", 52.0, -35.0, -31.0, 0.008),
+    ("anchor_191_Mado18_174_east_anomaly", "mado_anchor_stone", 34.0, -38.0, 63.0, 0.008),
+    ("shell_pebble_cluster_18H", "mado_scatter_cluster", 39.0, 25.0, 0.0, 0.008),
+    ("shell_pebble_cluster_19BC", "mado_scatter_cluster", -42.0, 28.0, 0.0, 0.008),
+    ("shell_pebble_cluster_18E", "mado_scatter_cluster", -14.0, -30.0, 0.0, 0.008),
+    ("halstone_cluster_west_south", "mado_scatter_cluster", -48.0, -26.0, 0.0, 0.008),
+    ("riverstone_cluster_east_anomaly", "mado_scatter_cluster", 42.0, -31.0, 0.0, 0.008),
+    ("reef_edge_west_south", "mado_reef_edge_cue", -57.0, -44.0, 16.0, 0.008),
+]
+
+DEFAULT_ENV_MIN = [-900.0, -850.0, -30.0]
+DEFAULT_ENV_MAX = [900.0, 760.0, 5.0]
+# Kept in sync with ShipwreckKhoaSmoothTerrainData::XMinM/XMaxM/YMinM/YMaxM (regenerated
+# 2026-07-28 at 401x351 resolution). Update these together whenever the terrain header is
+# regenerated -- a stale range here is exactly the "survey path goes outside the terrain,
+# produces empty/black data" failure mode the SSS integration guide (SCENE_INTEGRATION_GUIDE.md
+# section 4.2) warns about.
+MADO_REPORT_ENV_MIN = [-143.21, -112.57, -12.0]
+MADO_REPORT_ENV_MAX = [107.17, 108.20, 5.0]
+
+
+def mado_report_environment_rows(depth_at_fn) -> list[dict]:
+    rows = []
+    for name, kind, x, y, yaw, clearance in MADO_REPORT_MAJOR_OBJECTS:
+        depth = float(depth_at_fn(x, y))
+        terrain_z = -depth
+        is_facies_zone = kind.startswith("mado_facies")
+        rows.append(
+            {
+                "name": name,
+                "class": kind,
+                "x_m": x,
+                "y_m": y,
+                "yaw_deg": yaw,
+                "khoa_depth_m": depth,
+                "terrain_z_m": terrain_z,
+                "expected_bottom_z_m": terrain_z if is_facies_zone else terrain_z + clearance,
+                "expected_clearance_m": 0.0 if is_facies_zone else clearance,
+                "placement_policy": (
+                    "mado_report_environment_v1: non-geometry report facies zone on KHOA seabed; "
+                    "subtle effective impedance applied in Raycast terrain hits"
+                    if is_facies_zone
+                    else "mado_report_environment_v1: KHOA terrain snap + 120x100m report-core layout"
+                ),
+            }
+        )
+    return rows
 
 
 def normalize_to_u8(arr: np.ndarray) -> np.ndarray:
@@ -376,17 +503,36 @@ def write_csv(path: Path, rows: list[dict], fields: list[str]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="KHOA terrain + buoy environment + Raycast SSS survey.")
-    parser.add_argument("--output-dir", type=Path, default=WORKSPACE / "06_results" / "khoa_kigam_raycast_baseline")
+    parser.add_argument("--output-dir", type=Path, default=WORKSPACE / "06_results" / "20260722_khoa_env_raycast_survey_v1")
     parser.add_argument("--binary-path", type=Path, default=BINARY_PATH)
     parser.add_argument("--package-name", default="Ocean")
     parser.add_argument("--world", default="FlatUnderwater")
     parser.add_argument("--scene-proxy", default="khoa_survey_scene_v1")
     parser.add_argument("--buoy-summary", type=Path, default=DEFAULT_BUOY_SUMMARY)
     parser.add_argument(
+        "--terrain-profile",
+        choices=["khoa", "flat"],
+        default="khoa",
+        help="khoa follows the KHOA smooth bathymetry grid; flat uses one constant seabed depth.",
+    )
+    parser.add_argument(
+        "--flat-depth-m",
+        type=float,
+        default=8.18,
+        help="Constant seabed depth used only with --terrain-profile flat.",
+    )
+    parser.add_argument(
         "--water-profile",
-        choices=["default", "buoy"],
-        default="buoy",
-        help="default uses HoloOcean-style rho/c values; buoy uses nearby KHOA buoy temperature/salinity/current.",
+        choices=["default", "buoy", "mado_ctd"],
+        default="mado_ctd",
+        help=(
+            "default uses HoloOcean-style rho/c values; buoy uses the distant (37 km) KHOA "
+            "Taean-port buoy temperature/salinity; mado_ctd (default) overrides temperature, "
+            "salinity, and water density with the real 20-day CTD average measured at the "
+            "Mado-4ho excavation site itself (2015-09-19..2015-10-09, T=20.35 C, S=29.95 psu, "
+            "rho=1020.87 kg/m3), which is a closer and more direct in-situ measurement than the "
+            "distant buoy. Current direction still comes from the buoy proxy in all modes."
+        ),
     )
     parser.add_argument("--x-min", type=float, default=-66.0)
     parser.add_argument("--x-max", type=float, default=26.0)
@@ -401,12 +547,24 @@ def main() -> int:
         ),
     )
     parser.add_argument("--render-fps", type=int, default=10)
-    parser.add_argument("--speed-mps", type=float, default=2.0)
+    parser.add_argument("--speed-mps", type=float, default=1.2)
     parser.add_argument("--auv-altitude-above-seabed", type=float, default=4.7)
-    parser.add_argument("--drift-scale", type=float, default=0.0)
-    parser.add_argument("--max-drift-m", type=float, default=0.0)
-    parser.add_argument("--wiggle-amp-m", type=float, default=0.0)
-    parser.add_argument("--yaw-amp-deg", type=float, default=0.0)
+    parser.add_argument("--drift-scale", type=float, default=0.08)
+    parser.add_argument(
+        "--mado-current-speed-mps",
+        type=float,
+        default=0.115,
+        help=(
+            "Drift-proxy current magnitude, taken directly from the 2011 Mado-2ho excavation "
+            "report's measured current table at the Mado wreck site itself (10-day, 4x/day "
+            "current-meter readings: 0.0247-0.2151 m/s, mean ~0.10-0.13 m/s). This replaces the "
+            "distant Taean-port buoy reading (37 km away) as the drift-magnitude source; the "
+            "buoy is still used for direction and for temperature/salinity/density."
+        ),
+    )
+    parser.add_argument("--max-drift-m", type=float, default=15.0)
+    parser.add_argument("--wiggle-amp-m", type=float, default=0.35)
+    parser.add_argument("--yaw-amp-deg", type=float, default=2.0)
     parser.add_argument("--yaw-period-sec", type=float, default=24.0)
     parser.add_argument("--range-bins", type=int, default=1000)
     parser.add_argument("--range-min", type=float, default=0.5)
@@ -418,8 +576,8 @@ def main() -> int:
     parser.add_argument("--add-sigma", type=float, default=0.0)
     parser.add_argument("--mult-sigma", type=float, default=0.0)
     parser.add_argument("--sonar-hz", type=int, default=10)
-    parser.add_argument("--env-min", nargs=3, type=float, default=[-900.0, -850.0, -30.0])
-    parser.add_argument("--env-max", nargs=3, type=float, default=[900.0, 760.0, 5.0])
+    parser.add_argument("--env-min", nargs=3, type=float, default=DEFAULT_ENV_MIN.copy())
+    parser.add_argument("--env-max", nargs=3, type=float, default=DEFAULT_ENV_MAX.copy())
     parser.add_argument("--show-viewport", action="store_true")
     parser.add_argument("--visual-only", action="store_true")
     parser.add_argument("--hold-seconds", type=float, default=20.0)
@@ -446,6 +604,14 @@ def main() -> int:
     parser.add_argument("--chase-camera-height", type=float, default=1.5)
     args = parser.parse_args()
 
+    if (
+        "mado_report" in args.scene_proxy.lower()
+        and args.env_min == DEFAULT_ENV_MIN
+        and args.env_max == DEFAULT_ENV_MAX
+    ):
+        args.env_min = MADO_REPORT_ENV_MIN.copy()
+        args.env_max = MADO_REPORT_ENV_MAX.copy()
+
     terrain = load_terrain()
     y_tracks = [float(v.strip()) for v in args.y_tracks.split(",") if v.strip()]
     if args.auto_rows_from_speed:
@@ -455,10 +621,23 @@ def main() -> int:
     samples, pass_ranges = pass_plan(args.x_min, args.x_max, y_tracks, args.rows_per_pass)
     effective_row_spacing_m = abs(float(args.x_max) - float(args.x_min)) / max(args.rows_per_pass - 1, 1)
     effective_speed_mps = effective_row_spacing_m * max(float(args.sonar_hz), 1.0)
-    nominal_depth = float(terrain_depth_at(terrain, (args.x_min + args.x_max) * 0.5, float(np.median(y_tracks))))
-    buoy_env = load_buoy_environment(args.buoy_summary, nominal_depth) if args.water_profile == "buoy" else default_water_environment()
+
+    def depth_at(x: float, y: float) -> float:
+        if args.terrain_profile == "flat":
+            return float(args.flat_depth_m)
+        return float(terrain_depth_at(terrain, x, y))
+
+    nominal_depth = float(depth_at((args.x_min + args.x_max) * 0.5, float(np.median(y_tracks))))
+    if args.water_profile in ("buoy", "mado_ctd"):
+        buoy_env = load_buoy_environment(args.buoy_summary, nominal_depth)
+    else:
+        buoy_env = default_water_environment()
+    if args.water_profile == "mado_ctd":
+        buoy_env = apply_mado_ctd_overrides(buoy_env, nominal_depth)
     current_unit = current_unit_from_direction(buoy_env.current_dir_deg)
-    applied_drift_speed = min(buoy_env.current_speed_mps * args.drift_scale, args.max_drift_m / 120.0)
+    # Magnitude comes from the real Mado-2ho site current-meter measurements, not the distant
+    # buoy reading (see --mado-current-speed-mps help). Direction still uses the buoy proxy.
+    applied_drift_speed = min(args.mado_current_speed_mps, args.max_drift_m / 120.0)
 
     out = args.output_dir
     (out / "01_SSS").mkdir(parents=True, exist_ok=True)
@@ -467,6 +646,12 @@ def main() -> int:
 
     os.environ["HOLOOCEAN_SHIPWRECK_SPAWN"] = "1"
     os.environ["HOLOOCEAN_SHIPWRECK_SCENE_PRESET"] = args.scene_proxy
+    os.environ["HOLOOCEAN_SHIPWRECK_BASE_Z"] = f"{-nominal_depth:.6f}"
+    os.environ["HOLOOCEAN_SHIPWRECK_TERRAIN_PROFILE"] = args.terrain_profile
+    if args.terrain_profile == "flat":
+        os.environ["HOLOOCEAN_SHIPWRECK_FLAT_DEPTH_M"] = f"{float(args.flat_depth_m):.6f}"
+    else:
+        os.environ.pop("HOLOOCEAN_SHIPWRECK_FLAT_DEPTH_M", None)
     os.environ["HOLOOCEAN_SHIPWRECK_RESET_OCTREE_CACHE"] = "1"
     # Keep production survey runs clean. Visual/debug guides and literature stress
     # proxies are useful for inspection, but they should never leak into the
@@ -477,7 +662,10 @@ def main() -> int:
     if "literature" not in args.scene_proxy.lower():
         os.environ.pop("HOLOOCEAN_SHIPWRECK_FORCE_LITERATURE_PROXIES", None)
 
-    placement_rows = object_rows(terrain)
+    if "mado_report" in args.scene_proxy.lower():
+        placement_rows = mado_report_environment_rows(depth_at)
+    else:
+        placement_rows = object_rows(terrain) if args.terrain_profile == "khoa" else flat_object_rows(args.flat_depth_m)
     write_csv(
         out / "03_environment" / "khoa_object_ground_contact_table.csv",
         placement_rows,
@@ -496,7 +684,7 @@ def main() -> int:
     )
 
     first = samples[0]
-    first_depth = terrain_depth_at(terrain, first["x"], first["y"])
+    first_depth = depth_at(first["x"], first["y"])
     first["z"] = -first_depth + args.auv_altitude_above_seabed
     scenario = build_scenario(args, buoy_env, first)
 
@@ -514,7 +702,9 @@ def main() -> int:
         f"rho={buoy_env.water_density_kgm3:.2f}, c={buoy_env.sound_speed_mps:.2f}"
     )
     print(
-        f"current raw={buoy_env.current_speed_mps:.3f} m/s @ {buoy_env.current_dir_deg:.1f} deg, "
+        f"buoy current raw={buoy_env.current_speed_mps:.3f} m/s (direction proxy only), "
+        f"dir={buoy_env.current_dir_deg:.1f} deg, "
+        f"Mado-2ho measured current speed={args.mado_current_speed_mps:.3f} m/s, "
         f"applied drift speed={applied_drift_speed:.3f} m/s, yaw_amp={args.yaw_amp_deg:.1f} deg"
     )
 
@@ -563,7 +753,7 @@ def main() -> int:
                 dtype=np.float32,
             )
             actual_xy = planned_xy + drift + wiggle
-            depth = terrain_depth_at(terrain, float(actual_xy[0]), float(actual_xy[1]))
+            depth = depth_at(float(actual_xy[0]), float(actual_xy[1]))
             z = -depth + args.auv_altitude_above_seabed
             yaw = float(sample["yaw_deg"]) + args.yaw_amp_deg * math.sin(
                 2 * math.pi * elapsed / max(args.yaw_period_sec, 1.0)
@@ -656,12 +846,9 @@ def main() -> int:
         pass_ranges,
         ["pass_index", "start_row", "end_row", "y_track_m", "direction"],
     )
-    meta = {
-        "holoocean_version": getattr(holoocean, "__version__", "unknown"),
-        "binary_path": str(args.binary_path),
-        "world": args.world,
-        "scene_proxy": args.scene_proxy,
-        "terrain": {
+    if args.terrain_profile == "khoa":
+        terrain_meta = {
+            "profile": "khoa",
             "grid_x": terrain["grid_x"],
             "grid_y": terrain["grid_y"],
             "x_min": terrain["x_min"],
@@ -671,12 +858,32 @@ def main() -> int:
             "depth_min": terrain["depth_min"],
             "depth_max": terrain["depth_max"],
             "nominal_depth_at_survey_center_m": nominal_depth,
-        },
+        }
+    else:
+        terrain_meta = {
+            "profile": "flat",
+            "flat_depth_m": float(args.flat_depth_m),
+            "nominal_depth_at_survey_center_m": nominal_depth,
+            "note": "KHOA bathymetry is disabled for this ablation baseline.",
+        }
+
+    meta = {
+        "holoocean_version": getattr(holoocean, "__version__", "unknown"),
+        "binary_path": str(args.binary_path),
+        "world": args.world,
+        "scene_proxy": args.scene_proxy,
+        "terrain": terrain_meta,
         "buoy_environment": buoy_env.__dict__,
         "water_profile": args.water_profile,
         "drift_proxy": {
             "direction_deg": buoy_env.current_dir_deg,
-            "raw_current_speed_mps_assuming_crsp_cm_s": buoy_env.current_speed_mps,
+            "direction_source": "Taean-port buoy (37 km away), direction only",
+            "buoy_raw_current_speed_mps_unused_for_magnitude": buoy_env.current_speed_mps,
+            "mado_2ho_measured_current_speed_mps": args.mado_current_speed_mps,
+            "magnitude_source": (
+                "2011 Mado-2ho excavation report current-meter table at the wreck site: "
+                "10-day, 4x/day readings, 0.0247-0.2151 m/s range, ~0.10-0.13 m/s mean."
+            ),
             "drift_scale": args.drift_scale,
             "applied_drift_speed_mps": applied_drift_speed,
             "max_drift_m": args.max_drift_m,
@@ -708,18 +915,34 @@ def main() -> int:
         json.dumps(meta, indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
+    if args.terrain_profile == "khoa":
+        readme_intro = [
+            "# KHOA environment Raycast survey v1",
+            "",
+            "This run combines three environment updates:",
+            "",
+            "1. KHOA smooth bathymetry terrain from the existing Taean-Mado depth grid.",
+            "2. KIGAM/APL-UW sediment material mapping where the scene preset supports it.",
+            "3. Nearby KHOA buoy observation applied to water density, sound speed, weak drift, and yaw wobble.",
+        ]
+    else:
+        readme_intro = [
+            "# Flat baseline Raycast survey v1",
+            "",
+            "This is an ablation baseline with the same survey path, objects, and Raycast SSS settings,",
+            "but without KHOA bathymetry, KIGAM seabed material, or buoy water properties unless explicitly enabled.",
+            "",
+            "Use this output to compare against the environment-reflected run under controlled conditions.",
+        ]
+
     (out / "README.md").write_text(
         "\n".join(
-            [
-                "# KHOA environment Raycast survey v1",
-                "",
-                "This run combines three environment updates:",
-                "",
-                "1. KHOA smooth bathymetry terrain from the existing Taean-Mado depth grid.",
-                "2. Object placement checked against `terrain_z(x,y)` for wrecks and false positives.",
-                "3. Nearby KHOA buoy observation applied to water density, sound speed, weak drift, and yaw wobble.",
+            readme_intro
+            + [
                 "",
                 f"- Mode: {'visual-only viewport run' if args.visual_only else 'SSS collection run'}",
+                f"- Terrain profile: `{args.terrain_profile}`",
+                f"- Water profile: `{args.water_profile}`",
                 "",
                 f"- Full SSS: `{full_path.name if full_path is not None else 'not generated in visual-only mode'}`",
                 f"- Pass montage: `{montage_path.name if montage_path is not None else 'not generated in visual-only mode'}`",
