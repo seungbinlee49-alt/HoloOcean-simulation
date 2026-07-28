@@ -133,14 +133,6 @@ HoloOcean 2.4.0 `FlatUnderwater` world 위에 만든 100 x 120m 규모의 태안
 `HOLOOCEAN_SHIPWRECK_SCENE_PRESET=mado_report_environment_v1` 환경변수를 실행 전에 반드시 설정해야 합니다
 (PowerShell: `$env:HOLOOCEAN_SHIPWRECK_SCENE_PRESET = "mado_report_environment_v1"`).
 
-원시 raycast 출력은 TVG(range-gain) 정규화와 log-scale 표시를 거쳐야 실제 SSS처럼 보입니다. 예시:
-
-```powershell
-& '.venv_holoocean\Scripts\python.exe' `
-  '04_code\visualization\apply_tvg_normalization_v1.py' `
-  --input-npy '06_results\mado_report_environment_v1\01_SSS\khoa_environment_raycast_survey_raw.npy' `
-  --output-dir '06_results\mado_report_environment_v1_tvg' `
-  --rows-per-pass 600 --smooth-window 9 --speckle-mult-sigma 0.12
-```
-
-결과 예시는 `examples/mado_report_environment_v1/`에 있습니다.
+이 스크립트는 환경이 의도대로 스폰됐는지 확인하는 용도의 raw raycast 캡처만 담당합니다. TVG 정규화,
+log-scale 표시, speckle noise 같은 SSS 디스플레이 후처리는 이 저장소의 범위가 아니며 SSS 취득 파이프라인
+쪽에서 처리합니다.

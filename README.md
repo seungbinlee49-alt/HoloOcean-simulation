@@ -28,7 +28,6 @@ GT 마스크 생성)은 별도 담당자가 관리합니다. 이 저장소에서
     fetch_khoa_bathymetry.py
     make_khoa_location_map.py
   visualization/
-    apply_tvg_normalization_v1.py               # TVG 정규화 + log-scale 표시 + speckle noise 후처리
     check_khoa_survey_ground_contact_24.py
 
 03_data/
@@ -38,7 +37,7 @@ GT 마스크 생성)은 별도 담당자가 관리합니다. 이 저장소에서
   taean_mado_2021_report_analysis/    # 2021 문화재청 마도해역 시굴조사 보고서 텍스트 (구역/재질/닻돌 근거)
 
 examples/
-  mado_report_environment_v1/         # 대표 캡처 결과 (원본 + TVG/log/speckle 후처리본)
+  mado_report_environment_v1/         # 스폰 확인용 대표 raw 캡처 결과 (SSS 후처리본 아님)
 ```
 
 ## 실행 준비
@@ -69,6 +68,7 @@ python -m venv .venv_holoocean
 - HoloOcean/Unreal 전체 소스와 빌드 결과
 - SSS 취득 파이프라인 소스 (`RaycastSidescanSonar.cpp/.h`, `Octree.cpp`, `client/src/holoocean/sensors.py`) —
   별도 담당자가 관리
+- SSS 디스플레이 후처리 (TVG 정규화, log-scale, speckle noise 등) — 취득 파이프라인 쪽 범위
 - API key
 - 원본 KIGAM zip/shapefile 전체, 2021 보고서 원본 PDF (텍스트 추출본만 포함)
 - 대용량 raw `.npy` 캡처 결과
