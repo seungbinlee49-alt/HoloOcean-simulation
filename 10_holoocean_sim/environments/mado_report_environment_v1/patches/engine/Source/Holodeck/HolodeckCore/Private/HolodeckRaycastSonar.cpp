@@ -128,21 +128,27 @@ bool RaycastInsideMadoReportEllipse(
 }
 
 FString RaycastMadoReportTerrainFaciesMaterialAtClientXY(float X, float Y) {
-	if (RaycastInsideMadoReportEllipse(X, Y, -38.0f, 2.0f, 4.0f, 13.0f, 11.0f) ||
-		RaycastInsideMadoReportEllipse(X, Y, -42.0f, 28.0f, -16.0f, 24.0f, 14.0f)) {
+	// Kept in sync with the active blend function's geometry (50x20m named blocks, 20x20m west
+	// anomaly, 30x30m expanded east anomaly, 19-B/19-C split). This binary path only has 4
+	// material buckets (vs. 7 in the blend path), so 19-B/19-C and plain 18-G/east-anomaly firm
+	// mud all collapse to the single HardMud bucket here; only the west anomaly's real gravel
+	// content earns HardMudGravel.
+	if (RaycastInsideMadoReportEllipse(X, Y, -38.0f, 2.0f, 4.0f, 10.0f, 10.0f)) {
 		return TEXT("ShipwreckProjectHardMudGravel");
 	}
-	// East anomaly: report text describes only black/dark-gray hard mud, no gravel/river
-	// stones, unlike the west anomaly -> HardMud (not HardMudGravel).
-	if (RaycastInsideMadoReportEllipse(X, Y, 42.0f, -31.0f, -9.0f, 16.0f, 13.0f) ||
-		RaycastInsideMadoReportEllipse(X, Y, 27.0f, -17.0f, 18.0f, 18.0f, 15.0f)) {
+	// East anomaly, 19-B, 19-C, 18-G: report text describes only black/dark-gray hard mud or
+	// rubble+shell mud, unlike the west anomaly's real gravel/river stones -> HardMud.
+	if (RaycastInsideMadoReportEllipse(X, Y, 42.0f, -31.0f, -9.0f, 15.0f, 15.0f) ||
+		RaycastInsideMadoReportEllipse(X, Y, -42.0f, 17.0f, -16.0f, 25.0f, 10.0f) ||
+		RaycastInsideMadoReportEllipse(X, Y, -42.0f, 39.0f, -16.0f, 25.0f, 10.0f) ||
+		RaycastInsideMadoReportEllipse(X, Y, 27.0f, -17.0f, 18.0f, 25.0f, 10.0f)) {
 		return TEXT("ShipwreckProjectHardMud");
 	}
 	// WestSouthTransition zone removed here too: no report coordinate or measured survey
 	// grid, only a general directional-trend sentence from the 19-A block description.
-	if (RaycastInsideMadoReportEllipse(X, Y, 16.0f, -7.0f, 12.0f, 19.0f, 9.5f) ||
-		RaycastInsideMadoReportEllipse(X, Y, 39.0f, 25.0f, -10.0f, 22.0f, 12.0f) ||
-		RaycastInsideMadoReportEllipse(X, Y, -14.0f, -30.0f, 7.0f, 21.0f, 11.0f)) {
+	if (RaycastInsideMadoReportEllipse(X, Y, 16.0f, -7.0f, 12.0f, 25.0f, 10.0f) ||
+		RaycastInsideMadoReportEllipse(X, Y, 39.0f, 25.0f, -10.0f, 25.0f, 10.0f) ||
+		RaycastInsideMadoReportEllipse(X, Y, -14.0f, -30.0f, 7.0f, 25.0f, 10.0f)) {
 		return TEXT("ShipwreckProjectShellMud");
 	}
 	if (RaycastInsideMadoReportEllipse(X, Y, 0.0f, 0.0f, -4.0f, 56.0f, 46.0f)) {
@@ -188,7 +194,7 @@ FString RaycastMadoReportTerrainImpedanceMaterialAtClientXY(float X, float Y, fl
 	// Mz 1.0 Gravelly Muddy Sand (rho 2.151, nu 1.2241): West anomaly is explicitly "자갈+강돌
 	// 섞인 단단한 개흙" (gravel + river-stone mixed into firm mud) -- real coarse clasts, but
 	// still mud-matrix-dominant per the report text, not a pure gravel bed.
-	constexpr float HardMudGravelWestZ = 2151.0f * 1812.0f;
+	constexpr float HardMudGravelWestZ = 2203.0f * 1812.0f;
 
 	const float ActiveX = 1.0f - RaycastSmoothStep(60.0f, 72.0f, FMath::Abs(X));
 	const float ActiveY = 1.0f - RaycastSmoothStep(50.0f, 62.0f, FMath::Abs(Y));
