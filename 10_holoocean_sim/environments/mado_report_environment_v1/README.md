@@ -144,6 +144,11 @@ facies zone/닻돌/reef cue/wreck 스폰은 전부 C++ 하드코딩이 아니라
    유지). nadir 기준 73° 이상(=grazing 17° 이하)에서는 위 3번과 같은 원인(해당 config 기준 bin당 표본 부족)
    으로 raw 값이 불안정해집니다. 검증 그래프:
    `docs/presentation_assets/sources/backscatter_angle_validation_flat_single_material_v1.png`
+6. **reef edge cue 4개는 evidence 근거가 불명확합니다.** 다른 구성요소(facies zone, 닻돌, wreck)는
+   전부 JSON에 `evidence` 필드로 원문 인용이 남아있는데, `reef_edge_cues`만 그 필드가 아예 없고
+   README/코드 어디에도 이 4개 배치를 특정할 수 있는 원문 인용을 못 찾았습니다. mado_district1
+   환경을 만들면서 근거를 재확인하다가 발견한 기존 격차입니다 — 삭제할지, 원문에서 근거를 다시
+   찾아볼지 아직 결정 안 됨.
 
 ## 엔진 패치 적용
 

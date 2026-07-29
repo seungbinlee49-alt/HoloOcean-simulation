@@ -40,13 +40,13 @@
   "wreck_spawns": [
     {
       "id": "18-1_hull_fragment",
-      "evidence": "report line 1172-1176: bottom-plank (저판재) fragment, approx 150x50x30cm, found in 18-1 grid cell '2-1' at ~40cm depth below the seabed surface. This is a small fragment, not a full hull -- placed near the crop's local origin, offset 5m off the y=0 axis purely so a y=0 test survey track doesn't put it exactly on the sensor's nadir dead-zone for the entire pass (see top-level comment on why exact grid-cell position isn't recoverable to better than the ~150m KHOA point spacing anyway).",
+      "evidence": "report line 1172-1176: bottom-plank (저판재) fragment, approx 150x50x30cm, found in 18-1 grid cell '2-1' at ~40cm depth below the seabed surface. This is a small fragment, not a full hull -- placed near the crop's local origin, offset 5m off the y=0 axis purely so a y=0 test survey track doesn't put it exactly on the sensor's nadir dead-zone for the entire pass (see top-level comment on why exact grid-cell position isn't recoverable to better than the ~150m KHOA point spacing anyway). burial_fraction=1.0 (max the schema supports) is a qualitative 'heavily buried' choice, not a calculation from the reported 40cm depth -- the BaseZ formula (terrain_z + 0.05 - burial_fraction*height) does not have a mode for 'buried N cm below current grade', only proud-to-flush, so 1.0 is the closest available representation, not a precise match to 40cm.",
       "center_m": [0.0, 5.0],
       "yaw_deg": 0.0,
       "length_m": 1.5,
       "width_m": 0.5,
       "height_m": 0.3,
-      "burial_fraction": 0.8,
+      "burial_fraction": 1.0,
       "scour_pit_enabled": false
     }
   ]
