@@ -35,9 +35,6 @@ GT 마스크 생성)은 별도 담당자가 관리합니다. 이 저장소에서
   kigam_marine_geology_shp_1994/      # KIGAM 표층퇴적물 판정 (baseline Very Fine Sand 근거)
   khoa_observation_current_20260722/  # KHOA 부이 관측 (수온/염분/유향/유속)
   taean_mado_2021_report_analysis/    # 2021 문화재청 마도해역 시굴조사 보고서 텍스트 (구역/재질/닻돌 근거)
-
-examples/
-  mado_report_environment_v1/         # 스폰 확인용 대표 raw 캡처 결과 (SSS 후처리본 아님)
 ```
 
 ## 실행 준비
