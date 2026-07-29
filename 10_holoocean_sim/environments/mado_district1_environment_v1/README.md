@@ -76,8 +76,9 @@ MadoTerrainData: loaded 'mado_district1_environment_v1_terrain.csv' grid=251x281
 
 ## 엔진 패치 적용
 
-이 환경은 별도 C++ 패치가 없습니다 — `mado_report_environment_v1/patches/engine`의 config-driven
-시스템(`MadoSceneConfig.h/.cpp`, `HolodeckGameMode.cpp`, `HolodeckRaycastSonar.cpp`)을 그대로
+이 환경은 별도 C++ 패치가 없습니다 — `mado_report_environment_v1/patches/engine.diff`(`MadoSceneConfig.h/.cpp`
+신규 + `HolodeckGameMode.cpp` 수정)와 `mado_report_environment_v1/patches/FIELD_IMPEDANCE_HOOK.md`
+(`GetFieldImpedanceAtLocation()` 적용 지침, `FIELD_IMPLEMENTATION_GUIDE.md` §4.2 인터페이스)를 그대로
 공유합니다. 이 폴더에는 **씬 데이터만** 있습니다:
 
 - `patches/engine/Content/Config/mado_scenes/mado_district1_environment_v1.json`

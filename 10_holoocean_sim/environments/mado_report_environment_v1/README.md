@@ -27,7 +27,8 @@ HoloOcean 2.4.0 `FlatUnderwater` world 위에 만든 100 x 120m 규모의 태안
   baseline으로 깔고, 그 위에 보고서에 실측 좌표/구역 번호가 있는 8개 구역(서이상/동이상/18F/18H/18E/18G/19-B/19-C)에만
   뻘(SoftMud/ShellMud/HardMud/HardMudGravel) 재질을 blend합니다. 구역 경계는 완벽한 타원이 아니라
   domain-warp 노이즈로 불규칙하게 처리했고, 구역 내부에도 2-옥타브 텍스처 노이즈를 추가했습니다.
-  좌표/재질 근거는 `HolodeckRaycastSonar.cpp`의 각 zone 정의 옆 주석에 보고서 좌표와 함께 남겨뒀습니다.
+  좌표/재질 근거는 `Content/Config/mado_scenes/mado_report_environment_v1.json`의 각 `facies_zones[].evidence`
+  필드에 보고서 좌표와 함께 남겨뒀습니다 (config-driven으로 바뀌면서 C++ 주석이 아니라 JSON으로 이동).
   - **구역 크기**: 보고서 원문("1개의 조사구역을 50×20m으로 설정하고 그리드를 설치")에 따라 18-F/18-H/18-E/18-G/
     19-B/19-C는 전부 50×20m 직사각형(타원 반경 25×10으로 근사)입니다. 서쪽 이상신호는 20×20m(반경 10×10),
     동쪽 이상신호는 추가 유물 발견으로 20×20m에서 30×30m로 확장(반경 15×15)됐다고 원문에 명시돼 있습니다.
@@ -39,9 +40,10 @@ HoloOcean 2.4.0 `FlatUnderwater` world 위에 만든 100 x 120m 규모의 태안
     행을 찾아 매핑한 값입니다. 예를 들어 18-H는 원문에 "패각이 다수 함유된 무른 개흙"이라 18-F(패각 보통)보다
     한 단계 거친 Mz 5.0(Sandy Silt, Gravelly Mud) 행을 썼고, 서쪽 이상신호는 "자갈+강돌 섞인 단단한 개흙"이라
     Mz 1.0(Gravelly Muddy Sand) 행을 썼습니다. 어느 구역에 어느 표 행을 쓸지 고르는 것 자체는 판단이 들어가지만,
-    표의 숫자 자체는 원본 스캔에서 그대로 옮긴 값이라 자체 추정치가 아닙니다. 정확한 행 선택 근거는
-    `HolodeckRaycastSonar.cpp`의 `RaycastMadoReportTerrainImpedanceMaterialAtClientXY` 함수 주석에 구역별로
-    남겨뒀습니다.
+    표의 숫자 자체는 원본 스캔에서 그대로 옮긴 값이라 자체 추정치가 아닙니다. 정확한 행 선택 근거는 위와 같이
+    `mado_report_environment_v1.json`의 `facies_zones[].evidence` 필드에 구역별로 남겨뒀습니다. 이 값을
+    좌표 기반 임피던스로 계산하는 코드는 `patches/FIELD_IMPEDANCE_HOOK.md`에 있는
+    `GetFieldImpedanceAtLocation()` 구현(예전 이름 `RaycastMadoReportTerrainImpedanceMaterialAtClientXY`)입니다.
 - **닻돌(anchor stone) 16기**: 보고서 유물 카탈로그의 실측 길이/폭/두께(cm)를 그대로 슬랩 지오메트리에 사용.
   배치 좌표 자체는 보고서에 없어 임의 배치이며, 이는 코드 주석에도 명시했습니다.
 - **해류**: Mado-2호선(2011) 보고서의 실측 유속표 범위(0.0247~0.2151 m/s)를 참고해 0.115 m/s를 기본값으로 사용.
@@ -92,17 +94,33 @@ facies zone/닻돌/reef cue/wreck 스폰은 전부 C++ 하드코딩이 아니라
 | 6 | `env_min`/`env_max` | ✅ 위 값 그대로 config.json에 반영하면 됩니다 |
 | 7 | 엔진 소스 SSS 패치 | ⚠️ 아래 "역할 분담" 참고 |
 
-### 재질 조회 방식이 일반 규약과 다른 이유
+### 재질 조회 방식 (2026-07-30, 태그 기반으로 전환)
 
-가이드 §3의 표준 흐름은 `Material->GetName()` (UE Material 애셋 이름)을 `materials.csv`에서 조회합니다.
-이 환경의 **지형(seabed)만은 이 흐름을 타지 않습니다.** `HolodeckRaycastSonar.cpp::ComputeDetection`이
-지형 히트를 감지하면 `RaycastMadoReportTerrainImpedanceMaterialAtClientXY(X, Y, GroundRangeM)`를 직접 호출해서
-좌표 기반으로 블렌딩된 임피던스를 계산하고, 그 값을 `"ShipwreckProjectImpedance_<정수>"` 형태의 문자열로
-합성해 `Detection.material_type`에 바로 넣습니다. `GetImpedanceFromMap()`은 이 접두사를 만나면 문자열에서
-숫자를 직접 파싱해서 `materials.csv` 조회를 건너뜁니다 (`HolodeckRaycastSonar.cpp` 참고).
+`holoocean_ws/docs/FIELD_IMPLEMENTATION_GUIDE.md` §4.1/4.2 인터페이스로 전환했습니다 — 예전에는
+액터 **이름 문자열**(`ActorName.Contains(TEXT("KhoaSmoothBathymetryTerrain"))` 등)로 판정하고,
+지형 임피던스는 `"ShipwreckProjectImpedance_<정수>"` 형태로 문자열에 인코딩해서 넘겼습니다. 이 방식은
+오브젝트 종류가 늘 때마다 C++ 수정 + 전체 리빌드가 필요했고, `Contains()`가 부분일치라 오탐 위험이
+있었고, 문자열 왕복 때문에 레이당(핑당 최대 수만 회) 비용과 정밀도 손실이 있었습니다.
 
-닻돌/reef rock 등 개별 액터는 표준 흐름대로 액터 이름 매칭 → `materials.csv`의
-`ShipwreckProjectAnchorStone`, `ShipwreckProjectReefRock` 등을 조회합니다. 이 부분은 가이드와 동일합니다.
+지금은 **액터 태그**로 판정합니다.
+
+| 태그 | 붙는 곳 | 의미 |
+| --- | --- | --- |
+| `sssfacies` | 지형 액터 (`SpawnShipwreckProjectKhoaSmoothTerrainMesh`) | 좌표 기반 연속 필드 — `GetFieldImpedanceAtLocation()` 호출 |
+| `sssmat:ShipwreckProjectAnchorStone` | 닻돌 16기 | `materials.csv`에서 이름으로 직접 조회 |
+| `sssmat:ShipwreckProjectReefRock` | reef edge cue (현재 데이터 없음) | 〃 |
+| `sssmat:ShipwreckProjectWreck` + `wreck` | 난파선 파츠 (현재 스폰 안 됨) | 재질 태그 + GT 라벨 태그, 둘 다 별도 |
+
+`GetFieldImpedanceAtLocation(ClientHitPoint, GroundRangeM)`는 `HolodeckRaycastSonar.h`에 선언된
+가상함수이고(기본 구현 `-1.0f` = "필드 없음, 표준 조회로 폴백"), 이 환경의 실제 구현(존 블렌드 +
+2-옥타브 텍스처 노이즈 + 나디르 페이드, 예전 `RaycastMadoReportTerrainImpedanceMaterialAtClientXY`와
+수식은 동일하고 반환 타입만 FString→float)은 `patches/FIELD_IMPEDANCE_HOOK.md`에 있습니다. 취득 측의
+`sss-scene-runtime.diff`가 이 파일을 이미 수정하므로, 저희 쪽 diff(`patches/engine.diff`)와 충돌하지
+않도록 이 한 군데만 diff 대신 적용 지침 문서로 드립니다 (아래 "엔진 패치 적용" 참고).
+
+**예전 액터-이름 매칭 코드는 로컬 dev workspace에는 fallback으로 남아있지만(다른 미검증 테스트 씬이
+의존할 수 있어 보수적으로 삭제하지 않음), 태그가 항상 먼저 검사되므로 이 환경은 실질적으로 태그 경로만
+탑니다.**
 
 `materials.csv`에는 이 표에 없는 `M_Landscape`, `M_URockA`, `M_PreviewOceanWater` 같은 행도 섞여 있습니다.
 이 환경 코드가 만든 게 아니라, `FlatUnderwater` 월드의 기본 애셋을 처음 실행할 때 HoloOcean이 자동 등록한
@@ -114,9 +132,9 @@ facies zone/닻돌/reef cue/wreck 스폰은 전부 C++ 하드코딩이 아니라
 | --- | --- | --- | --- |
 | `ShipwreckProjectSeabed` | 1298 | 1564 | 재질 판정 실패 시 fallback (정상 동작에서는 거의 안 씀) |
 | `ShipwreckProjectAnchorStone` | 2600 | 3800 | 닻돌 16기 |
-| `ShipwreckProjectReefRock` | 2700 | 4500 | **현재 안 쓰임** — reef edge cue가 근거 없어 삭제됨 (아래 "알려진 제약" 6번). 메커니즘은 남아있어 나중에 근거 있는 값으로 재사용 가능 |
+| `ShipwreckProjectReefRock` | 2700 | 4500 | **현재 안 쓰임** — reef edge cue가 근거 없어 삭제됨 (아래 "알려진 제약" 6번). `sssmat:ShipwreckProjectReefRock` 태그 부착 코드는 이미 있어서, JSON에 근거 있는 reef cue를 다시 채워 넣기만 하면 바로 살아남 |
 | `ShipwreckProjectClutter` | 3000 | 5000 | **이 환경에서는 안 쓰임** — `HolodeckGameMode.cpp`가 같이 서빙하는 다른(구) scene preset의 gear/rope, rock mound 액터용. `mado_report_environment_v1` 코드 경로에서는 도달 불가 |
-| `ShipwreckProjectWreck` | 1100 | 1983 | **이 환경에서는 안 쓰임** — 같은 이유. 난파선 액터를 추가하면 그 이름 매칭 규칙(`SurveyWreck`/`TorpedoMesh_*`)이 그대로 적용됨 |
+| `ShipwreckProjectWreck` | 1100 | 1983 | **이 환경에서는 안 쓰임** — `wreck_spawns`가 비어있어서(양 환경 다 근거 있는 형태가 아니라 미스폰). `SpawnShipwreckProjectMadoWrecks`는 스폰 시 `sssmat:ShipwreckProjectWreck` + `wreck` 태그를 이미 붙이므로, JSON에 근거 있는 wreck_spawns 항목만 채우면 바로 동작 |
 | `ShipwreckProjectSoftMud`/`ShellMud`/`HardMud`/`HardMudGravel` | — | — | 지형 블렌딩에서만 쓰이는 값. CSV의 4행은 대표값 요약이고, 실제 코드는 `Content/Config/mado_scenes/*.json`의 `facies_zones[].target_material`에서 구역별로 읽음 (config-driven — 예전처럼 C++ 상수로 박혀 있지 않음, 위 "씬 변형" 참고). CSV 행 자체는 조회되지 않음 |
 
 ## 알려진 제약 (인수인계 시 바로 알아야 할 것)
@@ -156,21 +174,32 @@ facies zone/닻돌/reef cue/wreck 스폰은 전부 C++ 하드코딩이 아니라
 
 ## 엔진 패치 적용
 
-`patches/engine` 아래 파일을 HoloOcean 2.4.0 소스의 같은 상대경로에 덮어쓰고 다시 빌드합니다.
+2026-07-30부터 **엔진 소스 수정분은 whole-file이 아니라 diff**로 전달합니다
+(`FIELD_IMPLEMENTATION_GUIDE.md` §5.4 — 취득 측이 같은 파일을 통짜로 받으면 upstream이 바뀌거나
+양쪽이 같은 파일을 건드릴 때 조용히 덮어써진다고 지적한 부분). 순서대로 적용하세요.
 
-- `Source/Holodeck/HolodeckCore/Private/HolodeckGameMode.cpp` — 지형/닻돌/reef cue/wreck 스폰 (JSON+CSV config 기반)
-- `Source/Holodeck/HolodeckCore/Private/HolodeckRaycastSonar.cpp` — 재질/임피던스 판정 (base raycast sensor 공용 클래스)
-- `Source/Holodeck/HolodeckCore/Public/MadoSceneConfig.h` — 씬 config + 지형 heightfield 구조체/로더 선언
-- `Source/Holodeck/HolodeckCore/Private/MadoSceneConfig.cpp` — JSON/CSV 파서 + `HOLOOCEAN_SHIPWRECK_SCENE_PRESET` 경로 해석
-- `Content/Config/materials.csv` — 위 표의 재질 물성
-- `Content/Config/mado_scenes/*.json` — 씬 데이터 (구역/닻돌/reef cue/wreck, `terrain_data_source` 포함). 위 "씬 변형" 참고
-- `Content/Config/mado_terrain/*.csv` — 지형 heightfield 데이터 (JSON의 `terrain_data_source`가 참조)
+1. HoloOcean 2.4.0 소스 (`develop` 브랜치, `holoocean_ws`가 쓰는 것과 같은 커밋)를 받습니다.
+2. 취득 측 패치(`holoocean-sss-engine.diff`, `sss-scene-runtime.diff`)를 먼저 적용합니다 — 이 순서가
+   중요합니다 (`sss-scene-runtime.diff`가 `holoocean-sss-engine.diff`의 결과물을 전제로 함).
+3. 이 폴더의 `../engine.diff`를 적용합니다. `MadoSceneConfig.h/.cpp`(신규 파일)와
+   `HolodeckGameMode.cpp`(지형/닻돌/reef cue/wreck 스폰, `sssfacies`/`sssmat:...`/`wreck` 태그 부착
+   포함) 수정분이 여기 들어있습니다. 이 두 파일은 저희만 건드리므로 diff가 충돌 없이 그대로 적용됩니다.
+4. `patches/FIELD_IMPEDANCE_HOOK.md`를 따라 `HolodeckRaycastSonar.h/.cpp`에 `GetFieldImpedanceAtLocation()`
+   본문을 채웁니다. 이 파일은 diff로 안 드리는 유일한 예외입니다 — `sss-scene-runtime.diff`가 이미 같은
+   파일을 건드리므로, 저희가 또 diff를 얹으면 충돌 위험이 생깁니다 (위 "재질 조회 방식" 참고).
+5. `Content/Config/materials.csv` — 이 표의 재질 물성 행을 취득 측 파일에 **추가**(통째 교체 금지 —
+   `M_Metal_Steel`/`M_Wood_Pine`/`M_CobbleStone_Rough` 등 취득 측 행이 사라지면 그 오브젝트들이 기본
+   임피던스로 새하얗게 나옵니다, `FIELD_IMPLEMENTATION_GUIDE.md` §5.2).
+6. `Content/Config/mado_scenes/*.json`, `Content/Config/mado_terrain/*.csv` — 씬/지형 데이터, 그대로
+   같은 상대경로에 복사.
 
-**더 이상 필요 없음**: `ShipwreckKhoaSmoothTerrainData.generated.h`. 지형이 컴파일된 C++ 헤더에서 위
+**더 이상 필요 없음**: `ShipwreckKhoaSmoothTerrainData.generated.h`. 지형이 컴파일된 C++ 헤더에서
 `Content/Config/mado_terrain/*.csv` 런타임 로딩으로 바뀌면서 삭제했습니다.
 
-**포함하지 않은 것**: `RaycastSidescanSonar.cpp/.h`, `Octree.cpp`. 이 파일들은 SSS 취득(양측 출력/빔 지향성/GT
-마스크) 담당 쪽에서 별도로 관리합니다. 이 환경 저장소는 stock 버전을 그대로 씁니다 (아래 "역할 분담" 참고).
+**포함하지 않은 것**: `RaycastSidescanSonar.cpp/.h`, `SonarData.h`, `Octree.cpp`. 이 파일들은 SSS 취득
+(양측 출력/빔 지향성/GT 마스크) 담당 쪽에서 관리하며, `sss-scene-runtime.diff`/`holoocean-sss-engine.diff`가
+이미 필요한 수정(태그 디스패치, `impedance_override` 필드 등)을 포함합니다. 이 환경 저장소는 그 결과물
+위에 `FIELD_IMPEDANCE_HOOK.md`의 작은 함수 본문 하나만 얹습니다 (아래 "역할 분담" 참고).
 
 ## 역할 분담
 
