@@ -39,6 +39,12 @@ BINARY_PATH = (
     / "Holodeck.exe"
 )
 DEFAULT_OUT = WORKSPACE / "06_results" / "20260722_khoa_survey_ground_contact_check"
+MADO_SCENES_DIR = (
+    WORKSPACE / "10_holoocean_sim" / "holoocean_2_4_dev" / "engine" / "Content" / "Config" / "mado_scenes"
+)
+MADO_TERRAIN_DIR = (
+    WORKSPACE / "10_holoocean_sim" / "holoocean_2_4_dev" / "engine" / "Content" / "Config" / "mado_terrain"
+)
 
 WRECKS = [
     ("intact_A", "wreck", -58.0, -22.0, 22.0),
@@ -131,6 +137,69 @@ def terrain_depth_at(terrain: dict, x: float, y: float) -> float:
     d0 = d00 + (d10 - d00) * tx
     d1 = d01 + (d11 - d01) * tx
     return float(d0 + (d1 - d0) * ty)
+
+
+def load_terrain_csv(path: Path) -> dict:
+    """Parses a Content/Config/mado_terrain/*.csv heightfield (ix,iy,x_m,y_m,depth_m rows in
+    raster order, iy outer / ix inner -- same file MadoSceneConfig.cpp's LoadTerrainCsv reads
+    on the engine side) into the same dict shape load_terrain() returns."""
+    with path.open("r", encoding="utf-8-sig", newline="") as f:
+        rows = list(csv.DictReader(f))
+    if not rows:
+        raise ValueError(f"empty terrain csv: {path}")
+    xs: list[float] = []
+    ys: list[float] = []
+    depths: list[float] = []
+    first_iy = None
+    grid_x = None
+    for row in rows:
+        iy = int(row["iy"])
+        if first_iy is None:
+            first_iy = iy
+        elif grid_x is None and iy != first_iy:
+            grid_x = len(xs)
+        xs.append(float(row["x_m"]))
+        ys.append(float(row["y_m"]))
+        depths.append(float(row["depth_m"]))
+    if not grid_x or len(depths) % grid_x != 0:
+        raise ValueError(f"could not detect grid_x from terrain csv: {path}")
+    grid_y = len(depths) // grid_x
+    x_values = np.asarray(xs[:grid_x], dtype=np.float64)
+    y_values = np.asarray(ys[::grid_x], dtype=np.float64)
+    depths_arr = np.asarray(depths, dtype=np.float64).reshape((grid_y, grid_x))
+    return {
+        "grid_x": grid_x,
+        "grid_y": grid_y,
+        "x_values": x_values,
+        "y_values": y_values,
+        "depths": depths_arr,
+        "depth_min": float(depths_arr.min()),
+        "depth_median_survey_window": float(np.median(depths_arr)),
+        "depth_max": float(depths_arr.max()),
+        "x_min": float(x_values[0]),
+        "x_max": float(x_values[-1]),
+        "y_min": float(y_values[0]),
+        "y_max": float(y_values[-1]),
+    }
+
+
+def load_terrain_for_scene_proxy(scene_proxy: str) -> dict:
+    """Loads whichever terrain heightfield the ENGINE will actually use for this scene_proxy
+    value, so Python-side pose computation (AUV altitude, ground-contact checks) matches what
+    gets rendered. Mirrors MadoSceneConfig.cpp's scene JSON -> terrain_data_source resolution
+    instead of always reading the old District-II-only compiled header text. Falls back to
+    load_terrain() (the old behavior) for anything that isn't a recognized scene JSON, so
+    existing non-Mado callers are unaffected."""
+    if scene_proxy.lower().endswith(".json"):
+        scene_json_path = MADO_SCENES_DIR / scene_proxy
+        if scene_json_path.is_file():
+            scene = json.loads(scene_json_path.read_text(encoding="utf-8"))
+            terrain_source = scene.get("terrain_data_source", "")
+            if terrain_source:
+                csv_path = MADO_TERRAIN_DIR / terrain_source
+                if csv_path.is_file():
+                    return load_terrain_csv(csv_path)
+    return load_terrain()
 
 
 def object_rows(terrain: dict) -> list[dict]:

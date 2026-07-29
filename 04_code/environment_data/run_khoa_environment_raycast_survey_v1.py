@@ -23,6 +23,7 @@ from check_khoa_survey_ground_contact_24 import (  # noqa: E402
     BINARY_PATH,
     OBJECTS,
     load_terrain,
+    load_terrain_for_scene_proxy,
     object_rows,
     terrain_depth_at,
 )
@@ -659,7 +660,7 @@ def main() -> int:
         args.env_min = MADO_REPORT_ENV_MIN.copy()
         args.env_max = MADO_REPORT_ENV_MAX.copy()
 
-    terrain = load_terrain()
+    terrain = load_terrain_for_scene_proxy(args.scene_proxy)
     y_tracks = [float(v.strip()) for v in args.y_tracks.split(",") if v.strip()]
     if args.auto_rows_from_speed:
         track_len_m = abs(float(args.x_max) - float(args.x_min))
