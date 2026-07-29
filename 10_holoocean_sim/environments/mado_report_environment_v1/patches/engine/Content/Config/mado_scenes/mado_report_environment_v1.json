@@ -124,11 +124,6 @@
     {"id": "190_Mado18_173_EastAnomaly", "center_m": [52.0, -35.0], "yaw_deg": -31.0, "length_cm": 100.0, "width_cm": 23.2, "thickness_cm": 10.4, "rock_type": "tuff_or_sandstone_inferred"},
     {"id": "191_Mado18_174_EastAnomaly", "center_m": [34.0, -38.0], "yaw_deg": 63.0,  "length_cm": 83.6,  "width_cm": 22.4, "thickness_cm": 14.6, "rock_type": "tuff_reported"}
   ],
-  "reef_edge_cues": [
-    {"id": "reef_01", "center_m": [-57.0, -44.0], "yaw_deg": 16.0,  "length_m": 1.9,  "width_m": 0.85, "thickness_m": 0.28},
-    {"id": "reef_02", "center_m": [-54.0, -34.0], "yaw_deg": -28.0, "length_m": 2.25, "width_m": 1.03, "thickness_m": 0.35},
-    {"id": "reef_03", "center_m": [-49.0, 42.0],  "yaw_deg": 34.0,  "length_m": 2.6,  "width_m": 0.85, "thickness_m": 0.42},
-    {"id": "reef_04", "center_m": [-42.0, 47.0],  "yaw_deg": -12.0, "length_m": 2.95, "width_m": 1.03, "thickness_m": 0.49}
-  ],
+  "reef_edge_cues": [],
   "wreck_spawns": []
 }

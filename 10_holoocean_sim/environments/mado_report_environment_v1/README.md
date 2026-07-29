@@ -57,8 +57,9 @@ facies zone/닻돌/reef cue/wreck 스폰은 전부 C++ 하드코딩이 아니라
 `Content/Config/mado_scenes/` 기준) 직접 로드하고, `mado_report_environment_v1`처럼 알려진 이름을 주면
 번들된 기본 JSON으로 매핑됩니다.
 
-- **`mado_report_environment_v1.json`**: 위에서 설명한 기본 씬 (보고서 근거 재질/구역/닻돌/reef cue).
-- **`mado_report_environment_v1_heldout_material_v1.json`**: 지형·구역·닻돌·reef cue 배치는 기본 씬과
+- **`mado_report_environment_v1.json`**: 위에서 설명한 기본 씬 (보고서 근거 재질/구역/닻돌). reef cue는
+  근거 없어서 삭제했습니다 (`reef_edge_cues: []` — 아래 "알려진 제약" 6번 참고).
+- **`mado_report_environment_v1_heldout_material_v1.json`**: 지형·구역·닻돌 배치는 기본 씬과
   완전히 동일하고, **전역 baseline 재질만** 다른 실제 Hamilton 행(Mz 1.5 Medium Sand / Mz 5.0 Sandy Silt,
   Gravelly Mud)으로 교체한 held-out 테스트용 변형입니다. 다운스트림 탐지 파이프라인이 기본 씬의 특정
   재질에만 과적합되지 않았는지 확인하는 용도이며, **실제 마도 현장의 재질 구성에 대한 주장이 아닙니다**
@@ -113,7 +114,7 @@ facies zone/닻돌/reef cue/wreck 스폰은 전부 C++ 하드코딩이 아니라
 | --- | --- | --- | --- |
 | `ShipwreckProjectSeabed` | 1298 | 1564 | 재질 판정 실패 시 fallback (정상 동작에서는 거의 안 씀) |
 | `ShipwreckProjectAnchorStone` | 2600 | 3800 | 닻돌 16기 |
-| `ShipwreckProjectReefRock` | 2700 | 4500 | reef edge cue 4개 |
+| `ShipwreckProjectReefRock` | 2700 | 4500 | **현재 안 쓰임** — reef edge cue가 근거 없어 삭제됨 (아래 "알려진 제약" 6번). 메커니즘은 남아있어 나중에 근거 있는 값으로 재사용 가능 |
 | `ShipwreckProjectClutter` | 3000 | 5000 | **이 환경에서는 안 쓰임** — `HolodeckGameMode.cpp`가 같이 서빙하는 다른(구) scene preset의 gear/rope, rock mound 액터용. `mado_report_environment_v1` 코드 경로에서는 도달 불가 |
 | `ShipwreckProjectWreck` | 1100 | 1983 | **이 환경에서는 안 쓰임** — 같은 이유. 난파선 액터를 추가하면 그 이름 매칭 규칙(`SurveyWreck`/`TorpedoMesh_*`)이 그대로 적용됨 |
 | `ShipwreckProjectSoftMud`/`ShellMud`/`HardMud`/`HardMudGravel` | — | — | 지형 블렌딩에서만 쓰이는 값. CSV의 4행은 대표값 요약이고, 실제 코드는 `Content/Config/mado_scenes/*.json`의 `facies_zones[].target_material`에서 구역별로 읽음 (config-driven — 예전처럼 C++ 상수로 박혀 있지 않음, 위 "씬 변형" 참고). CSV 행 자체는 조회되지 않음 |
@@ -144,11 +145,14 @@ facies zone/닻돌/reef cue/wreck 스폰은 전부 C++ 하드코딩이 아니라
    유지). nadir 기준 73° 이상(=grazing 17° 이하)에서는 위 3번과 같은 원인(해당 config 기준 bin당 표본 부족)
    으로 raw 값이 불안정해집니다. 검증 그래프:
    `docs/presentation_assets/sources/backscatter_angle_validation_flat_single_material_v1.png`
-6. **reef edge cue 4개는 evidence 근거가 불명확합니다.** 다른 구성요소(facies zone, 닻돌, wreck)는
-   전부 JSON에 `evidence` 필드로 원문 인용이 남아있는데, `reef_edge_cues`만 그 필드가 아예 없고
-   README/코드 어디에도 이 4개 배치를 특정할 수 있는 원문 인용을 못 찾았습니다. mado_district1
-   환경을 만들면서 근거를 재확인하다가 발견한 기존 격차입니다 — 삭제할지, 원문에서 근거를 다시
-   찾아볼지 아직 결정 안 됨.
+6. **reef edge cue는 근거 없어서 삭제했습니다 (2026-07-29).** mado_district1 환경을 만들면서 다른
+   구성요소들과 대조하다가, `reef_edge_cues`만 다른 요소들(facies zone/닻돌/wreck)과 달리 JSON에
+   `evidence` 필드가 아예 없다는 걸 발견했습니다. 이 4개가 처음 추가된 커밋(`c93f7fe`)의 실제 좌표
+   생성 코드를 보면 `1.9f + 0.35f * Index`, `0.28f + 0.07f * Index` 같은 등차수열로 크기를 찍어낸
+   것이었습니다 — 닻돌처럼 카탈로그에서 옮긴 불규칙한 실측치가 아니라, 그냥 절차적으로 생성한
+   장식용 값이었다는 뜻입니다. 원문에서도 이 4개를 특정할 근거를 못 찾아서, `reef_edge_cues: []`로
+   비웠습니다. C++ 스폰 메커니즘(`SpawnShipwreckProjectMadoReefEdgeCues`, config-driven)은 나중에
+   진짜 근거를 찾으면 재사용할 수 있게 그대로 남겨뒀습니다.
 
 ## 엔진 패치 적용
 
