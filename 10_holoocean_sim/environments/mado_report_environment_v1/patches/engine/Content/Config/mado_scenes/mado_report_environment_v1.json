@@ -1,6 +1,6 @@
 {
   "scene_name": "mado_report_environment_v1",
-  "terrain_data_source": "ShipwreckKhoaSmoothTerrainData",
+  "terrain_data_source": "mado_report_environment_v1_terrain.csv",
   "baseline_material": {
     "comment": "Very Fine Sand, KIGAM classification + APL-UW TR9407 Table 2 Hamilton ratio (Mz 3.5)",
     "density_kgm3": 1298.0,

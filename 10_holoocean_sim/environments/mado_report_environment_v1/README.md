@@ -10,11 +10,18 @@ HoloOcean 2.4.0 `FlatUnderwater` world 위에 만든 100 x 120m 규모의 태안
 ## 이 환경이 반영한 것
 
 - **지형**: KHOA 실측 수심점(원 해상도 ~150m 간격)을 보간·평활화한 401x351 heightfield.
-  `10_holoocean_sim/environments/mado_report_environment_v1/patches/engine/Source/Holodeck/HolodeckCore/Private/ShipwreckKhoaSmoothTerrainData.generated.h`.
-  더 촘촘한 그리드는 렌더링을 매끄럽게 할 뿐, 실측보다 더 정밀한 정보를 의미하지 않습니다.
-  `04_code/environment_data/generate_khoa_smooth_terrain_header_v2.py`로 재생성할 수 있습니다
-  (입력은 `03_data/khoa_bathymetry/.../khoa_bathymetry_smooth_181x181_heightfield.csv`를 X∈[-150,110],
-  Y∈[-120,110] 범위로 자른 서브셋, `--grid-x 401 --grid-y 351 --smooth-sigma-cells 3.5 --smooth-passes 5`).
+  `Content/Config/mado_terrain/mado_report_environment_v1_terrain.csv`에서 런타임에 로드합니다
+  (`MadoSceneConfig.h/.cpp`의 `FMadoTerrainData`/`GetActiveMadoTerrainData()`) — 예전에는
+  `ShipwreckKhoaSmoothTerrainData.generated.h`로 컴파일되어 있어 지형을 바꾸려면 리빌드가 필요했지만,
+  이제 씬 JSON의 `terrain_data_source` 필드가 어떤 CSV를 쓸지 지정하므로 새 사이트를 추가할 때도 리빌드가
+  필요 없습니다 (아래 "씬 변형" 참고). 더 촘촘한 그리드는 렌더링을 매끄럽게 할 뿐, 실측보다 더 정밀한
+  정보를 의미하지 않습니다. `04_code/environment_data/generate_khoa_smooth_terrain_header_v2.py`의
+  `--out-smoothed-csv` 출력으로 재생성할 수 있습니다 (입력은
+  `03_data/khoa_bathymetry/.../khoa_bathymetry_smooth_181x181_heightfield.csv`를 X∈[-150,110],
+  Y∈[-120,110] 범위로 자른 서브셋, `--grid-x 401 --grid-y 351 --smooth-sigma-cells 3.5 --smooth-passes 5`;
+  git에는 용량을 줄이기 위해 `seabed_z_m` 컬럼을 빼고 좌표/깊이를 소수점 6자리로 반올림한 버전을 커밋했습니다
+  — 재생성 시 완전 동일 값은 아니지만 float32 유효자리 이내 차이라 결과에 실질적 영향 없음을 직접
+  검증했습니다, corr=0.9999995).
 - **해저 재질**: 조사구역 전체는 KIGAM 표층퇴적물 판정 기반 `Very Fine Sand`(density 1298 kg/m^3, sound speed
   1564 m/s, APL-UW TR9407 Table 2 Hamilton ratio 사용, `03_data/kigam_marine_geology_shp_1994` 참고)를
   baseline으로 깔고, 그 위에 보고서에 실측 좌표/구역 번호가 있는 8개 구역(서이상/동이상/18F/18H/18E/18G/19-B/19-C)에만
@@ -142,13 +149,16 @@ facies zone/닻돌/reef cue/wreck 스폰은 전부 C++ 하드코딩이 아니라
 
 `patches/engine` 아래 파일을 HoloOcean 2.4.0 소스의 같은 상대경로에 덮어쓰고 다시 빌드합니다.
 
-- `Source/Holodeck/HolodeckCore/Private/HolodeckGameMode.cpp` — 지형/닻돌/reef cue/wreck 스폰 (JSON config 기반)
+- `Source/Holodeck/HolodeckCore/Private/HolodeckGameMode.cpp` — 지형/닻돌/reef cue/wreck 스폰 (JSON+CSV config 기반)
 - `Source/Holodeck/HolodeckCore/Private/HolodeckRaycastSonar.cpp` — 재질/임피던스 판정 (base raycast sensor 공용 클래스)
-- `Source/Holodeck/HolodeckCore/Public/MadoSceneConfig.h` — 씬 config 구조체/로더 선언 (신규)
-- `Source/Holodeck/HolodeckCore/Private/MadoSceneConfig.cpp` — JSON 파서 + `HOLOOCEAN_SHIPWRECK_SCENE_PRESET` 경로 해석 (신규)
-- `Source/Holodeck/HolodeckCore/Private/ShipwreckKhoaSmoothTerrainData.generated.h` — KHOA heightfield 데이터
+- `Source/Holodeck/HolodeckCore/Public/MadoSceneConfig.h` — 씬 config + 지형 heightfield 구조체/로더 선언
+- `Source/Holodeck/HolodeckCore/Private/MadoSceneConfig.cpp` — JSON/CSV 파서 + `HOLOOCEAN_SHIPWRECK_SCENE_PRESET` 경로 해석
 - `Content/Config/materials.csv` — 위 표의 재질 물성
-- `Content/Config/mado_scenes/*.json` — 씬 데이터 (구역/닻돌/reef cue/wreck). 위 "씬 변형" 참고
+- `Content/Config/mado_scenes/*.json` — 씬 데이터 (구역/닻돌/reef cue/wreck, `terrain_data_source` 포함). 위 "씬 변형" 참고
+- `Content/Config/mado_terrain/*.csv` — 지형 heightfield 데이터 (JSON의 `terrain_data_source`가 참조)
+
+**더 이상 필요 없음**: `ShipwreckKhoaSmoothTerrainData.generated.h`. 지형이 컴파일된 C++ 헤더에서 위
+`Content/Config/mado_terrain/*.csv` 런타임 로딩으로 바뀌면서 삭제했습니다.
 
 **포함하지 않은 것**: `RaycastSidescanSonar.cpp/.h`, `Octree.cpp`. 이 파일들은 SSS 취득(양측 출력/빔 지향성/GT
 마스크) 담당 쪽에서 별도로 관리합니다. 이 환경 저장소는 stock 버전을 그대로 씁니다 (아래 "역할 분담" 참고).

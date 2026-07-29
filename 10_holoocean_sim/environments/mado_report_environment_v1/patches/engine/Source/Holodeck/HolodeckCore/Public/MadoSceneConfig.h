@@ -96,10 +96,39 @@ struct FMadoSceneConfig {
 	float					DomainWarpCellSizeM = 7.0f;
 	float					DomainWarpFractionOfRadius = 0.22f;
 
+	// Filename of a heightfield CSV under Content/Config/mado_terrain/ (see FMadoTerrainData).
+	// Empty/unrecognized falls back to mado_report_environment_v1_terrain.csv for backward
+	// compatibility with callers that request khoa terrain-following without an active scene.
+	FString TerrainDataSource;
+
 	TArray<FMadoFaciesZoneConfig>  FaciesZones;
 	TArray<FMadoAnchorStoneConfig> AnchorStones;
 	TArray<FMadoReefCueConfig>	    ReefEdgeCues;
 	TArray<FMadoWreckSpawnConfig>  WreckSpawns;
+};
+
+// Loaded from a Content/Config/mado_terrain/*.csv heightfield (columns: ix,iy,x_m,y_m,depth_m,
+// seabed_z_m; rows in raster order, iy outer / ix inner -- see
+// 04_code/environment_data/generate_khoa_smooth_terrain_header_v2.py's --out-smoothed-csv output,
+// which is exactly this format). Replaces the old compiled ShipwreckKhoaSmoothTerrainData.generated.h
+// so a new site's terrain is a data file, not a C++ rebuild.
+struct FMadoTerrainData {
+	bool  bValid = false;
+	int32 GridX = 0;
+	int32 GridY = 0;
+	float XMinM = 0.0f;
+	float XMaxM = 0.0f;
+	float YMinM = 0.0f;
+	float YMaxM = 0.0f;
+	float DepthMinM = 0.0f;
+	float DepthMaxM = 0.0f;
+	TArray<float> XValues;
+	TArray<float> YValues;
+	TArray<float> DepthM; // row-major, index = iy * GridX + ix
+
+	// Bilinear-sampled water depth (positive, meters) at local (X, Y). Mirrors the sampling math
+	// previously inlined in HolodeckGameMode.cpp::ShipwreckProjectKhoaDepthAt exactly.
+	float DepthAt(float X, float Y) const;
 };
 
 // Resolves HOLOOCEAN_SHIPWRECK_SCENE_PRESET to a concrete config and caches it (loaded once per
@@ -111,3 +140,9 @@ const FMadoSceneConfig& GetActiveMadoSceneConfig();
 
 // True if the resolved config loaded successfully (i.e. some Mado report scene is active).
 bool IsMadoReportSceneActive();
+
+// Resolves and caches (once per process) the terrain heightfield to use: the active scene's
+// "terrain_data_source" JSON field if a scene is active and sets one, otherwise
+// mado_report_environment_v1_terrain.csv (matches the old hardcoded-header behavior, so any
+// caller using khoa terrain-following without an active Mado scene is unaffected).
+const FMadoTerrainData& GetActiveMadoTerrainData();

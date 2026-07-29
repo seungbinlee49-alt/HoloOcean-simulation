@@ -16,7 +16,6 @@
 #include "Misc/Parse.h"
 #include "ProceduralMeshComponent.h"
 
-#include "ShipwreckKhoaSmoothTerrainData.generated.h"
 #include "MadoSceneConfig.h"
 
 const char RESET_KEY[] = "RESET";
@@ -52,26 +51,7 @@ float ShipwreckProjectKhoaDepthAt(float X, float Y) {
 		return ReadShipwreckProjectFloatEnv(TEXT("HOLOOCEAN_SHIPWRECK_FLAT_DEPTH_M"), 8.18f);
 	}
 
-	constexpr int32 GridX = ShipwreckKhoaSmoothTerrainData::GridX;
-	constexpr int32 GridY = ShipwreckKhoaSmoothTerrainData::GridY;
-	const float U = (X - ShipwreckKhoaSmoothTerrainData::XMinM) /
-		(ShipwreckKhoaSmoothTerrainData::XMaxM - ShipwreckKhoaSmoothTerrainData::XMinM) * (GridX - 1);
-	const float V = (Y - ShipwreckKhoaSmoothTerrainData::YMinM) /
-		(ShipwreckKhoaSmoothTerrainData::YMaxM - ShipwreckKhoaSmoothTerrainData::YMinM) * (GridY - 1);
-	const int32 Ix0 = FMath::Clamp(FMath::FloorToInt(U), 0, GridX - 2);
-	const int32 Iy0 = FMath::Clamp(FMath::FloorToInt(V), 0, GridY - 2);
-	const int32 Ix1 = Ix0 + 1;
-	const int32 Iy1 = Iy0 + 1;
-	const float Tx = FMath::Clamp(U - Ix0, 0.0f, 1.0f);
-	const float Ty = FMath::Clamp(V - Iy0, 0.0f, 1.0f);
-
-	const float D00 = ShipwreckKhoaSmoothTerrainData::DepthM[Iy0 * GridX + Ix0];
-	const float D10 = ShipwreckKhoaSmoothTerrainData::DepthM[Iy0 * GridX + Ix1];
-	const float D01 = ShipwreckKhoaSmoothTerrainData::DepthM[Iy1 * GridX + Ix0];
-	const float D11 = ShipwreckKhoaSmoothTerrainData::DepthM[Iy1 * GridX + Ix1];
-	const float D0 = FMath::Lerp(D00, D10, Tx);
-	const float D1 = FMath::Lerp(D01, D11, Tx);
-	return FMath::Lerp(D0, D1, Ty);
+	return GetActiveMadoTerrainData().DepthAt(X, Y);
 }
 
 float ShipwreckProjectKhoaTerrainZAt(float X, float Y) {
@@ -1063,15 +1043,16 @@ void SpawnShipwreckProjectKhoaSmoothTerrainMesh(UWorld* World) {
 	MeshComp->SetMobility(EComponentMobility::Static);
 	MeshComp->bUseComplexAsSimpleCollision = true;
 
-	const int32 GridX = ShipwreckKhoaSmoothTerrainData::GridX;
-	const int32 GridY = ShipwreckKhoaSmoothTerrainData::GridY;
+	const FMadoTerrainData& Terrain = GetActiveMadoTerrainData();
+	const int32 GridX = Terrain.GridX;
+	const int32 GridY = Terrain.GridY;
 	TArray<FVector> Vertices;
 	Vertices.Reserve(GridX * GridY);
 	for (int32 Iy = 0; Iy < GridY; ++Iy) {
 		for (int32 Ix = 0; Ix < GridX; ++Ix) {
 			const int32 Index = Iy * GridX + Ix;
-			const float X = ShipwreckKhoaSmoothTerrainData::XValues[Ix];
-			const float Y = ShipwreckKhoaSmoothTerrainData::YValues[Iy];
+			const float X = Terrain.XValues[Ix];
+			const float Y = Terrain.YValues[Iy];
 			const float Z = -ShipwreckProjectKhoaDepthAt(X, Y);
 			Vertices.Add(ShipwreckProjectLocation(X, Y, Z));
 		}
@@ -1104,17 +1085,17 @@ void SpawnShipwreckProjectKhoaSmoothTerrainMesh(UWorld* World) {
 	UV0.Reserve(Vertices.Num());
 	VertexColors.Reserve(Vertices.Num());
 	const float DepthRange =
-		FMath::Max(ShipwreckKhoaSmoothTerrainData::DepthMaxM - ShipwreckKhoaSmoothTerrainData::DepthMinM, 0.001f);
+		FMath::Max(Terrain.DepthMaxM - Terrain.DepthMinM, 0.001f);
 	for (int32 Iy = 0; Iy < GridY; ++Iy) {
 		for (int32 Ix = 0; Ix < GridX; ++Ix) {
 			const int32 Index = Iy * GridX + Ix;
 			UV0.Add(FVector2D(
 				static_cast<float>(Ix) / static_cast<float>(GridX - 1),
 				static_cast<float>(Iy) / static_cast<float>(GridY - 1)));
-			const float X = ShipwreckKhoaSmoothTerrainData::XValues[Ix];
-			const float Y = ShipwreckKhoaSmoothTerrainData::YValues[Iy];
+			const float X = Terrain.XValues[Ix];
+			const float Y = Terrain.YValues[Iy];
 			const float Depth01 =
-				(ShipwreckProjectKhoaDepthAt(X, Y) - ShipwreckKhoaSmoothTerrainData::DepthMinM) / DepthRange;
+				(ShipwreckProjectKhoaDepthAt(X, Y) - Terrain.DepthMinM) / DepthRange;
 			VertexColors.Add(FLinearColor(0.16f + 0.14f * Depth01, 0.15f + 0.10f * Depth01, 0.10f, 1.0f));
 			Tangents.Add(FProcMeshTangent(1.0f, 0.0f, 0.0f));
 		}
@@ -1158,12 +1139,12 @@ void SpawnShipwreckProjectKhoaSmoothTerrainMesh(UWorld* World) {
 		GridY,
 		Vertices.Num(),
 		Triangles.Num() / 3,
-		ShipwreckKhoaSmoothTerrainData::XMinM,
-		ShipwreckKhoaSmoothTerrainData::XMaxM,
-		ShipwreckKhoaSmoothTerrainData::YMinM,
-		ShipwreckKhoaSmoothTerrainData::YMaxM,
-		ShipwreckKhoaSmoothTerrainData::DepthMinM,
-		ShipwreckKhoaSmoothTerrainData::DepthMaxM);
+		Terrain.XMinM,
+		Terrain.XMaxM,
+		Terrain.YMinM,
+		Terrain.YMaxM,
+		Terrain.DepthMinM,
+		Terrain.DepthMaxM);
 }
 
 void SpawnShipwreckProjectKhoaSurveyVisualDebugGuides(UWorld* World, UStaticMesh* Cube) {

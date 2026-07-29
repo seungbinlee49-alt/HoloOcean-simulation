@@ -61,6 +61,7 @@ FMadoSceneConfig ParseSceneConfigJson(const FString& JsonText, const FString& So
 
 	Config.SceneName = GetStr(Root, TEXT("scene_name"), TEXT(""));
 	Config.SourceJsonPath = SourcePath;
+	Config.TerrainDataSource = GetStr(Root, TEXT("terrain_data_source"), TEXT(""));
 
 	const TSharedPtr<FJsonObject>* BaselineObj = nullptr;
 	if (Root->TryGetObjectField(TEXT("baseline_material"), BaselineObj)) {
@@ -204,6 +205,83 @@ FString ResolveConfigPath(const FString& PresetEnvValue) {
 	return FPaths::ConvertRelativePathToFull(Candidate);
 }
 
+FString ResolveTerrainCsvPath(const FString& FileName) {
+	FString Candidate = FileName;
+	if (FPaths::IsRelative(Candidate)) {
+		Candidate = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Config/mado_terrain"), Candidate);
+	}
+	return FPaths::ConvertRelativePathToFull(Candidate);
+}
+
+// Parses a heightfield CSV written by generate_khoa_smooth_terrain_header_v2.py's
+// --out-smoothed-csv (header: ix,iy,x_m,y_m,depth_m,seabed_z_m; rows in raster order, iy outer /
+// ix inner). GridX is detected from where iy first changes, rather than trusting a declared
+// value, so a malformed/truncated file fails loudly instead of silently misreading the grid.
+bool LoadTerrainCsv(const FString& AbsPath, FMadoTerrainData& OutTerrain) {
+	FString FileText;
+	if (!FFileHelper::LoadFileToString(FileText, *AbsPath)) {
+		return false;
+	}
+	TArray<FString> Lines;
+	FileText.ParseIntoArrayLines(Lines);
+	if (Lines.Num() < 2) {
+		return false;
+	}
+
+	TArray<float> Xs, Ys, Depths;
+	Xs.Reserve(Lines.Num());
+	Ys.Reserve(Lines.Num());
+	Depths.Reserve(Lines.Num());
+	int32 GridXDetected = -1;
+	int32 FirstIy = -1;
+	for (int32 i = 1; i < Lines.Num(); ++i) {
+		TArray<FString> Cols;
+		Lines[i].ParseIntoArray(Cols, TEXT(","), true);
+		if (Cols.Num() < 5) {
+			continue;
+		}
+		const int32 Iy = FCString::Atoi(*Cols[1]);
+		if (FirstIy < 0) {
+			FirstIy = Iy;
+		} else if (GridXDetected < 0 && Iy != FirstIy) {
+			GridXDetected = Xs.Num();
+		}
+		Xs.Add(FCString::Atof(*Cols[2]));
+		Ys.Add(FCString::Atof(*Cols[3]));
+		Depths.Add(FCString::Atof(*Cols[4]));
+	}
+	if (GridXDetected <= 1 || Depths.Num() % GridXDetected != 0) {
+		return false;
+	}
+	const int32 GridYDetected = Depths.Num() / GridXDetected;
+
+	OutTerrain.GridX = GridXDetected;
+	OutTerrain.GridY = GridYDetected;
+	OutTerrain.DepthM = MoveTemp(Depths);
+	OutTerrain.XValues.SetNumUninitialized(GridXDetected);
+	for (int32 Ix = 0; Ix < GridXDetected; ++Ix) {
+		OutTerrain.XValues[Ix] = Xs[Ix];
+	}
+	OutTerrain.YValues.SetNumUninitialized(GridYDetected);
+	for (int32 Iy = 0; Iy < GridYDetected; ++Iy) {
+		OutTerrain.YValues[Iy] = Ys[Iy * GridXDetected];
+	}
+	OutTerrain.XMinM = OutTerrain.XValues[0];
+	OutTerrain.XMaxM = OutTerrain.XValues.Last();
+	OutTerrain.YMinM = OutTerrain.YValues[0];
+	OutTerrain.YMaxM = OutTerrain.YValues.Last();
+	float DMin = OutTerrain.DepthM[0];
+	float DMax = OutTerrain.DepthM[0];
+	for (const float D : OutTerrain.DepthM) {
+		DMin = FMath::Min(DMin, D);
+		DMax = FMath::Max(DMax, D);
+	}
+	OutTerrain.DepthMinM = DMin;
+	OutTerrain.DepthMaxM = DMax;
+	OutTerrain.bValid = true;
+	return true;
+}
+
 } // namespace
 
 const FMadoSceneConfig& GetActiveMadoSceneConfig() {
@@ -236,4 +314,57 @@ const FMadoSceneConfig& GetActiveMadoSceneConfig() {
 
 bool IsMadoReportSceneActive() {
 	return GetActiveMadoSceneConfig().bValid;
+}
+
+float FMadoTerrainData::DepthAt(float X, float Y) const {
+	if (!bValid || GridX < 2 || GridY < 2) {
+		return 0.0f;
+	}
+	const float U = (X - XMinM) / (XMaxM - XMinM) * (GridX - 1);
+	const float V = (Y - YMinM) / (YMaxM - YMinM) * (GridY - 1);
+	const int32 Ix0 = FMath::Clamp(FMath::FloorToInt(U), 0, GridX - 2);
+	const int32 Iy0 = FMath::Clamp(FMath::FloorToInt(V), 0, GridY - 2);
+	const int32 Ix1 = Ix0 + 1;
+	const int32 Iy1 = Iy0 + 1;
+	const float Tx = FMath::Clamp(U - Ix0, 0.0f, 1.0f);
+	const float Ty = FMath::Clamp(V - Iy0, 0.0f, 1.0f);
+
+	const float D00 = DepthM[Iy0 * GridX + Ix0];
+	const float D10 = DepthM[Iy0 * GridX + Ix1];
+	const float D01 = DepthM[Iy1 * GridX + Ix0];
+	const float D11 = DepthM[Iy1 * GridX + Ix1];
+	const float D0 = FMath::Lerp(D00, D10, Tx);
+	const float D1 = FMath::Lerp(D01, D11, Tx);
+	return FMath::Lerp(D0, D1, Ty);
+}
+
+const FMadoTerrainData& GetActiveMadoTerrainData() {
+	static const FMadoTerrainData Terrain = []() {
+		FString FileName = TEXT("mado_report_environment_v1_terrain.csv");
+		const FMadoSceneConfig& SceneConfig = GetActiveMadoSceneConfig();
+		if (SceneConfig.bValid && !SceneConfig.TerrainDataSource.IsEmpty()) {
+			FileName = SceneConfig.TerrainDataSource;
+		}
+		const FString AbsPath = ResolveTerrainCsvPath(FileName);
+		FMadoTerrainData Data;
+		if (!LoadTerrainCsv(AbsPath, Data)) {
+			UE_LOG(LogHolodeck, Warning, TEXT("MadoTerrainData: failed to load terrain CSV %s (from '%s')"), *AbsPath, *FileName);
+		} else {
+			UE_LOG(
+				LogHolodeck,
+				Log,
+				TEXT("MadoTerrainData: loaded '%s' grid=%dx%d x=[%.2f,%.2f] y=[%.2f,%.2f] depth=[%.2f,%.2f]"),
+				*FileName,
+				Data.GridX,
+				Data.GridY,
+				Data.XMinM,
+				Data.XMaxM,
+				Data.YMinM,
+				Data.YMaxM,
+				Data.DepthMinM,
+				Data.DepthMaxM);
+		}
+		return Data;
+	}();
+	return Terrain;
 }
