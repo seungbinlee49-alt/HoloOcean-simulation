@@ -96,15 +96,26 @@ HoloOcean 2.4.0 `FlatUnderwater` world 위에 만든 100 x 120m 규모의 태안
    별도로 `wreck` 태그를 가진 액터를 배치해야 합니다.
 2. **지형이 평탄하지 않습니다.** SSS 쪽 slant→ground 보정 로직이 단일 고도를 가정한다면 사전 협의가 필요합니다
    (SCENE_INTEGRATION_GUIDE.md §4.3).
-3. **`--azimuth-ray-count`를 충분히 크게 주지 않으면 nadir 근처에 동심원 형태의 가짜 무늬(aliasing)가 생깁니다.**
+3. **`--azimuth-ray-count`를 충분히 크게 주지 않으면 동심원 형태의 가짜 무늬(aliasing)가 생깁니다.**
    `RaycastSidescanSonar.cpp`(stock, 이 환경에서 수정하지 않음)의 histogram은 slant range 기준 균등 bin인데
-   azimuth ray는 각도 기준 균등 간격이라, nadir 근처 bin 밀도가 부족하면 일부 bin이 비어 노이즈만 채워집니다.
-   `RangeBins=1000`, `RangeMax=60m` 기준으로 실측 검증 결과 **`--azimuth-ray-count` 34000 이상**을 권장합니다
-   (기존 8500에서는 뚜렷한 동심원 아티팩트가 나타났고, 34000에서는 사라졌습니다). Range bin 수/범위를 바꾸면
-   이 권장값도 다시 계산해야 합니다.
+   azimuth ray는 각도 기준 균등 간격이라, 특정 각도 구간에서 bin당 샘플 수가 부족하면 노이즈만 채워집니다.
+   `run_khoa_environment_raycast_survey_v1.py`는 이제 `--azimuth-ray-count`를 지정하지 않으면
+   `recommended_azimuth_ray_count()`가 자동으로 안전값을 계산합니다. 근거·검증 데이터는
+   `SCENE_INTEGRATION_GUIDE.md` §4.5 참고.
 4. 지형/재질은 `HOLOOCEAN_SHIPWRECK_SCENE_PRESET=mado_report_environment_v1` 환경변수로 활성화됩니다.
    (`HOLOOCEAN_SHIPWRECK_ENABLE_HARD_FACIES_ACOUSTIC_MAP=1`을 추가로 주면 blend 대신 binary/hard 구역 분류로
    전환할 수 있으나, 기본값은 꺼져 있고 권장 경로는 blend 방식입니다.)
+5. **후방산란 각도 모델은 단순 `R^2 cos(θ)` (Lambertian 형태이며, 저(低) grazing 각도에서 실제 해저처럼
+   0이 아닌 바닥값(floor)을 갖지 않고 0으로 수렴합니다.** 평탄·단일재질 테스트 씬(altitude 4.7m,
+   `RangeBins=1000`, `RangeMax=50m`, Very Fine Sand ρ=1298/c=1564)으로 직접 검증한 결과, 시뮬레이터 raw
+   출력은 이 공식과 표본이 안정적인 구간(nadir 기준 2°-73°)에서 **상관계수 1.0000, RMSE 0.0006**로 사실상
+   완전히 일치합니다 — 구현 자체는 수식대로 정확히 동작함을 확인. 다만 실제 문헌(Jackson & Richardson류
+   high-frequency bottom scattering 측정)의 grazing-angle 응답은 낮은 grazing 각도에서 완만한 상수 바닥값을
+   유지하는 경우가 많아, 우리 모델의 저(低) grazing 영역 형태는 실측과 정성적으로 다릅니다 (알려진 단순화이며,
+   TVG 정규화가 range 의존 형태를 흡수하므로 실제 워터폴 이미지에는 거의 영향이 없다고 판단해 미구현 상태로
+   유지). nadir 기준 73° 이상(=grazing 17° 이하)에서는 위 3번과 같은 원인(해당 config 기준 bin당 표본 부족)
+   으로 raw 값이 불안정해집니다. 검증 그래프:
+   `docs/presentation_assets/sources/backscatter_angle_validation_flat_single_material_v1.png`
 
 ## 엔진 패치 적용
 
