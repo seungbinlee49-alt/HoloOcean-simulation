@@ -42,34 +42,134 @@ virtual float GetFieldImpedanceAtLocation(
 #include "MadoSceneConfig.h"
 ```
 
-5. `HolodeckRaycastSonar.cpp`의 아무 곳(클래스 멤버 함수들 사이, 예를 들어 `ComputeDetection()`
-   바로 위)에 아래 정의를 추가하세요. 좌표→임피던스 변환의 실제 수식은 `MadoSceneConfig.h`에 이미
-   있는 `FMadoSceneConfig`/`FMadoFaciesZoneConfig`를 그대로 사용합니다 (evidence·근거는
-   `Content/Config/mado_scenes/*.json`의 `facies_zones[].evidence` 필드 참고).
+5. `HolodeckRaycastSonar.cpp`의 anonymous namespace(익명 네임스페이스, 파일 상단 `namespace { ... }`
+   블록) 안에 아래 헬퍼 함수들을 추가하세요 -- 존 블렌드, domain-warp로 불규칙해진 타원 경계,
+   2-옥타브 텍스처 노이즈, 나디르 페이드까지 저희 로컬 dev workspace 코드와 100% 동일합니다
+   (그대로 복붙 가능). evidence·근거는 `Content/Config/mado_scenes/*.json`의
+   `facies_zones[].evidence` 필드에 있습니다.
 
 ```cpp
-float UHolodeckRaycastSonar::GetFieldImpedanceAtLocation(
-	const FVector& ClientHitPoint,
-	float		   GroundRangeM) const {
+namespace {
+
+float RaycastMadoReportEllipseScore(
+	float X, float Y, float CenterX, float CenterY, float YawDeg, float RadiusX, float RadiusY) {
+	const float Dx = X - CenterX;
+	const float Dy = Y - CenterY;
+	const float Theta = FMath::DegreesToRadians(YawDeg);
+	const float CosTheta = FMath::Cos(Theta);
+	const float SinTheta = FMath::Sin(Theta);
+	const float LocalX = Dx * CosTheta + Dy * SinTheta;
+	const float LocalY = -Dx * SinTheta + Dy * CosTheta;
+	const float Rx = FMath::Max(RadiusX, 0.001f);
+	const float Ry = FMath::Max(RadiusY, 0.001f);
+	return (LocalX * LocalX) / (Rx * Rx) + (LocalY * LocalY) / (Ry * Ry);
+}
+
+float RaycastSmoothStep(float Edge0, float Edge1, float X) {
+	const float T = FMath::Clamp((X - Edge0) / (Edge1 - Edge0), 0.0f, 1.0f);
+	return T * T * (3.0f - 2.0f * T);
+}
+
+float RaycastHash01(float X, float Y) {
+	const float CellX = FMath::FloorToFloat(X * 1.7f);
+	const float CellY = FMath::FloorToFloat(Y * 1.7f);
+	const float V = FMath::Sin(CellX * 12.9898f + CellY * 78.233f) * 43758.5453f;
+	return FMath::Frac(FMath::Abs(V));
+}
+
+// Smooth (bilinearly-interpolated, continuous) value noise, used both to warp zone boundaries
+// away from perfect ellipses and to add internal texture within a zone.
+float RaycastValueNoise(float X, float Y, float CellSize) {
+	const float GX = X / FMath::Max(CellSize, 0.001f);
+	const float GY = Y / FMath::Max(CellSize, 0.001f);
+	const float X0 = FMath::FloorToFloat(GX);
+	const float Y0 = FMath::FloorToFloat(GY);
+	const float TX = GX - X0;
+	const float TY = GY - Y0;
+	const float H00 = RaycastHash01(X0, Y0);
+	const float H10 = RaycastHash01(X0 + 1.0f, Y0);
+	const float H01 = RaycastHash01(X0, Y0 + 1.0f);
+	const float H11 = RaycastHash01(X0 + 1.0f, Y0 + 1.0f);
+	const float SX = RaycastSmoothStep(0.0f, 1.0f, TX);
+	const float SY = RaycastSmoothStep(0.0f, 1.0f, TY);
+	const float Top = FMath::Lerp(H00, H10, SX);
+	const float Bottom = FMath::Lerp(H01, H11, SX);
+	return FMath::Lerp(Top, Bottom, SY);
+}
+
+float RaycastMadoZoneWeight(
+	float X, float Y, float CenterX, float CenterY, float YawDeg, float RadiusX, float RadiusY,
+	float DomainWarpCellSize = 7.0f, float DomainWarpFraction = 0.22f) {
+	// Domain-warp the sample point before scoring against the ellipse, so the zone boundary
+	// reads as an irregular, organic sediment-facies edge instead of a mathematically perfect
+	// ellipse. Two independent noise samples (different offsets) avoid a simple radial wobble.
+	const float WarpAmpX = RadiusX * DomainWarpFraction;
+	const float WarpAmpY = RadiusY * DomainWarpFraction;
+	const float WarpedX = X + (RaycastValueNoise(X, Y, DomainWarpCellSize) - 0.5f) * 2.0f * WarpAmpX;
+	const float WarpedY = Y + (RaycastValueNoise(X + 91.7f, Y + 57.3f, DomainWarpCellSize) - 0.5f) * 2.0f * WarpAmpY;
+	const float Score = RaycastMadoReportEllipseScore(WarpedX, WarpedY, CenterX, CenterY, YawDeg, RadiusX, RadiusY);
+	return 1.0f - RaycastSmoothStep(0.35f, 1.60f, Score);
+}
+
+float RaycastBlendImpedance(float BaseZ, float TargetZ, float Weight, float Strength) {
+	return FMath::Lerp(BaseZ, TargetZ, FMath::Clamp(Weight * Strength, 0.0f, 1.0f));
+}
+
+// The actual field computation. Zone centers/radii, target impedances, blend strength, baseline
+// materials, and texture-noise parameters all come from GetActiveMadoSceneConfig() (MadoSceneConfig.h),
+// so a new scene variant is a JSON edit, not a rebuild.
+float RaycastMadoReportTerrainImpedanceAtClientXYImpl(float X, float Y, float GroundRangeM) {
 	const FMadoSceneConfig& Config = GetActiveMadoSceneConfig();
 
-	const float ActiveX = 1.0f - FMath::SmoothStep(Config.ActiveWindowXStart, Config.ActiveWindowXEnd, FMath::Abs(ClientHitPoint.X));
-	const float ActiveY = 1.0f - FMath::SmoothStep(Config.ActiveWindowYStart, Config.ActiveWindowYEnd, FMath::Abs(ClientHitPoint.Y));
+	const float ActiveX = 1.0f - RaycastSmoothStep(Config.ActiveWindowXStart, Config.ActiveWindowXEnd, FMath::Abs(X));
+	const float ActiveY = 1.0f - RaycastSmoothStep(Config.ActiveWindowYStart, Config.ActiveWindowYEnd, FMath::Abs(Y));
 	const float ActiveWeight = FMath::Clamp(ActiveX * ActiveY, 0.0f, 1.0f);
 
 	float Z = FMath::Lerp(Config.BaselineMaterial.Impedance(), Config.SoftMudBaselineMaterial.Impedance(), ActiveWeight);
-	// ... 나머지 존별 블렌드/텍스처 노이즈 수식은 저희 로컬 dev workspace의
-	// HolodeckRaycastSonar.cpp에 있는 RaycastMadoReportTerrainImpedanceAtClientXYImpl()과
-	// 100% 동일합니다 -- 통합 시 저장소 관리자(승빈)에게 전체 함수 본문을 요청해 주세요.
-	// 여기 요약만 적어둔 이유는 이 문서 자체가 diff가 아니라 손으로 옮겨 적는 코드라, 긴 수식을
-	// 옮기다 오타가 나는 사고를 피하려는 것입니다 -- 전체 함수는 복붙 가능한 형태로 별도 전달합니다.
+	float MaxZoneWeight = ActiveWeight;
+
+	for (const FMadoFaciesZoneConfig& Zone : Config.FaciesZones) {
+		const float Weight = RaycastMadoZoneWeight(
+			X, Y, Zone.CenterX, Zone.CenterY, Zone.YawDeg, Zone.RadiusX, Zone.RadiusY,
+			Config.DomainWarpCellSizeM, Config.DomainWarpFractionOfRadius);
+		Z = RaycastBlendImpedance(Z, Zone.TargetMaterial.Impedance(), Weight, Config.BlendStrength);
+		MaxZoneWeight = FMath::Max(MaxZoneWeight, Weight);
+	}
+
+	// Two-octave smooth noise (fine mottling + coarser patchiness) for internal texture within a
+	// zone.
+	const FMadoTextureNoiseConfig& T = Config.TextureNoise;
+	const float FineNoise = RaycastValueNoise(X, Y, T.FineCellSizeM);
+	const float CoarseNoise = RaycastValueNoise(X * T.CoarseFreqScale + 13.0f, Y * T.CoarseFreqScale + 7.0f, T.CoarseCellSizeM);
+	const float TextureNoise = ((FineNoise * T.FineWeight + CoarseNoise * T.CoarseWeight) - 0.5f) * 2.0f;
+	// Near nadir (small ground range from the sensor track), the slant-range-to-ground-range
+	// mapping is nearly singular, so consecutive range bins jump across many texture-noise grid
+	// cells' worth of world distance; sampling a spatially-periodic noise field under that much
+	// foreshortening aliases into a "zone plate" concentric-ring pattern. Fading the texture
+	// amplitude out near nadir removes the ill-conditioned sampling regime; it also matches real
+	// SSS, where the near-nadir return is dominated by specular reflection, not fine texture.
+	const float NearNadirFade = RaycastSmoothStep(T.NearNadirFadeStartM, T.NearNadirFadeEndM, GroundRangeM);
+	const float TextureAmp = (T.AmpBase + T.AmpZoneWeightScale * FMath::Clamp(MaxZoneWeight, 0.0f, 1.0f)) * NearNadirFade;
+	Z *= 1.0f + TextureNoise * TextureAmp;
+
 	return Z;
+}
+
+} // namespace
+
+float UHolodeckRaycastSonar::GetFieldImpedanceAtLocation(
+	const FVector& ClientHitPoint,
+	float		   GroundRangeM) const {
+	// Only the Mado report/district facies field is implemented right now; GetActiveMadoSceneConfig()
+	// already resolves the correct scene from HOLOOCEAN_SHIPWRECK_SCENE_PRESET, so no per-scene
+	// branching is needed here even though this environment repo ships two scenes (District I/II).
+	return RaycastMadoReportTerrainImpedanceAtClientXYImpl(ClientHitPoint.X, ClientHitPoint.Y, GroundRangeM);
 }
 ```
 
-> 실제 통합 시점에는 6번 블록을 요약이 아니라 전체 함수(약 35줄, 존 블렌드 + 2-옥타브 텍스처
-> 노이즈 + 나디르 페이드 포함)를 그대로 복붙할 수 있게 전달하겠습니다. 여기서는 "어디에, 어떤
-> 시그니처로 넣는지" 통합 절차만 문서화합니다.
+이게 전체입니다 -- 요약이 아니라 그대로 복붙해서 쓰시면 됩니다. `HolodeckRaycastSonar.cpp`가 이미
+`namespace { ... }` 블록을 갖고 있다면 그 안에 헬퍼들을 합치고, `GetFieldImpedanceAtLocation` 정의는
+네임스페이스 밖(파일 스코프)에 두세요.
 
 ## 검증
 
