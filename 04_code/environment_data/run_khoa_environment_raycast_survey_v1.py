@@ -219,6 +219,34 @@ MADO_REPORT_MAJOR_OBJECTS = [
     ("reef_edge_west_south", "mado_reef_edge_cue", -57.0, -44.0, 16.0, 0.008),
 ]
 
+def recommended_azimuth_ray_count(azimuth_deg: float, range_bins: int = 1000) -> int:
+    """Minimum AzimuthRayCount needed to avoid the concentric-ring aliasing artifact.
+
+    RaycastSidescanSonar bins each ping's rays into `range_bins` histogram columns. If the
+    angular spacing between adjacent rays is too coarse, some columns receive zero real hits
+    on every ping (not just occasionally), which shows up as static concentric rings/arcs in
+    the waterfall image once range-gain normalization divides by those near-empty columns.
+
+    This threshold is empirically calibrated, not a first-principles derivation: a simple
+    flat-bottom secant-geometry model undershoots the real requirement by ~50x, most likely
+    because the true SonarSocket mount tilt (baked into the AUV mesh, not in this script) does
+    not match the naive "azimuth=0 is nadir" assumption. The two data points below are real,
+    directly captured/verified results, not estimates:
+
+      - Azimuth=85 deg,  AzimuthRayCount=8500  (0.0100 deg/ray) -> confirmed ring artifact
+      - Azimuth=170 deg, AzimuthRayCount=68000 (0.0025 deg/ray) -> confirmed clean, no artifact
+
+    both at RangeBins=1000, RangeMax in [50, 60] m, altitude ~4.7 m above seabed. The 0.0025
+    deg/ray threshold is used here as the safe angular resolution, scaled linearly with
+    range_bins (finer range binning plausibly needs proportionally finer angular sampling --
+    theoretically motivated, not independently verified). If you change RangeMax or altitude
+    far from the validated range (50-60 m / ~4-5 m), re-verify visually for ring artifacts
+    rather than trusting this formula blindly.
+    """
+    safe_deg_per_ray = 0.0025 * (1000.0 / max(int(range_bins), 1))
+    return max(math.ceil(azimuth_deg / safe_deg_per_ray), 2)
+
+
 DEFAULT_ENV_MIN = [-900.0, -850.0, -30.0]
 DEFAULT_ENV_MAX = [900.0, 760.0, 5.0]
 # Kept in sync with ShipwreckKhoaSmoothTerrainData::XMinM/XMaxM/YMinM/YMaxM (regenerated
@@ -571,7 +599,18 @@ def main() -> int:
     parser.add_argument("--range-max", type=float, default=60.0)
     parser.add_argument("--azimuth", type=float, default=85.0)
     parser.add_argument("--elevation", type=float, default=0.25)
-    parser.add_argument("--azimuth-ray-count", type=int, default=8500)
+    parser.add_argument(
+        "--azimuth-ray-count",
+        type=int,
+        default=None,
+        help=(
+            "Rays per ping across the azimuth fan. Default (None) auto-computes a safe value "
+            "from --azimuth/--range-bins via recommended_azimuth_ray_count() to avoid the "
+            "concentric-ring aliasing artifact (see that function's docstring for the "
+            "validated data points behind this). Override only if you have separately verified "
+            "your chosen value is artifact-free for your azimuth/range-bins combination."
+        ),
+    )
     parser.add_argument("--elevation-ray-count", type=int, default=4)
     parser.add_argument("--add-sigma", type=float, default=0.0)
     parser.add_argument("--mult-sigma", type=float, default=0.0)
@@ -603,6 +642,14 @@ def main() -> int:
     parser.add_argument("--chase-camera-distance", type=float, default=6.0)
     parser.add_argument("--chase-camera-height", type=float, default=1.5)
     args = parser.parse_args()
+
+    if args.azimuth_ray_count is None:
+        args.azimuth_ray_count = recommended_azimuth_ray_count(args.azimuth, args.range_bins)
+        print(
+            f"azimuth_ray_count not set, auto-computed {args.azimuth_ray_count} "
+            f"from azimuth={args.azimuth:g} deg, range_bins={args.range_bins} "
+            "(see recommended_azimuth_ray_count() for the validated basis)."
+        )
 
     if (
         "mado_report" in args.scene_proxy.lower()
