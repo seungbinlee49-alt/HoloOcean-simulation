@@ -26,15 +26,6 @@ bool RaycastMadoReportFaciesSceneActive() {
 	return IsMadoReportSceneActive();
 }
 
-bool RaycastMadoReportHardFaciesOverlayEnabled() {
-	static const bool bEnabled = []() {
-		const FString EnvValue =
-			FPlatformMisc::GetEnvironmentVariable(TEXT("HOLOOCEAN_SHIPWRECK_ENABLE_HARD_FACIES_ACOUSTIC_MAP"));
-		return EnvValue == TEXT("1") || EnvValue.Equals(TEXT("true"), ESearchCase::IgnoreCase);
-	}();
-	return bEnabled;
-}
-
 float RaycastSmoothStep(float Edge0, float Edge1, float X) {
 	const float T = FMath::Clamp((X - Edge0) / (Edge1 - Edge0), 0.0f, 1.0f);
 	return T * T * (3.0f - 2.0f * T);
@@ -111,47 +102,6 @@ float RaycastMadoReportEllipseScore(
 	const float Rx = FMath::Max(RadiusX, 0.001f);
 	const float Ry = FMath::Max(RadiusY, 0.001f);
 	return (LocalX * LocalX) / (Rx * Rx) + (LocalY * LocalY) / (Ry * Ry);
-}
-
-bool RaycastInsideMadoReportEllipse(
-	float X,
-	float Y,
-	float CenterX,
-	float CenterY,
-	float YawDeg,
-	float RadiusX,
-	float RadiusY) {
-	return RaycastMadoReportEllipseScore(X, Y, CenterX, CenterY, YawDeg, RadiusX, RadiusY) <= 1.0f;
-}
-
-FString RaycastMadoReportTerrainFaciesMaterialAtClientXY(float X, float Y) {
-	// Kept in sync with the active blend function's geometry (50x20m named blocks, 20x20m west
-	// anomaly, 30x30m expanded east anomaly, 19-B/19-C split). This binary path only has 4
-	// material buckets (vs. 7 in the blend path), so 19-B/19-C and plain 18-G/east-anomaly firm
-	// mud all collapse to the single HardMud bucket here; only the west anomaly's real gravel
-	// content earns HardMudGravel.
-	if (RaycastInsideMadoReportEllipse(X, Y, -38.0f, 2.0f, 4.0f, 10.0f, 10.0f)) {
-		return TEXT("ShipwreckProjectHardMudGravel");
-	}
-	// East anomaly, 19-B, 19-C, 18-G: report text describes only black/dark-gray hard mud or
-	// rubble+shell mud, unlike the west anomaly's real gravel/river stones -> HardMud.
-	if (RaycastInsideMadoReportEllipse(X, Y, 42.0f, -31.0f, -9.0f, 15.0f, 15.0f) ||
-		RaycastInsideMadoReportEllipse(X, Y, -42.0f, 17.0f, -16.0f, 25.0f, 10.0f) ||
-		RaycastInsideMadoReportEllipse(X, Y, -42.0f, 39.0f, -16.0f, 25.0f, 10.0f) ||
-		RaycastInsideMadoReportEllipse(X, Y, 27.0f, -17.0f, 18.0f, 25.0f, 10.0f)) {
-		return TEXT("ShipwreckProjectHardMud");
-	}
-	// WestSouthTransition zone removed here too: no report coordinate or measured survey
-	// grid, only a general directional-trend sentence from the 19-A block description.
-	if (RaycastInsideMadoReportEllipse(X, Y, 16.0f, -7.0f, 12.0f, 25.0f, 10.0f) ||
-		RaycastInsideMadoReportEllipse(X, Y, 39.0f, 25.0f, -10.0f, 25.0f, 10.0f) ||
-		RaycastInsideMadoReportEllipse(X, Y, -14.0f, -30.0f, 7.0f, 25.0f, 10.0f)) {
-		return TEXT("ShipwreckProjectShellMud");
-	}
-	if (RaycastInsideMadoReportEllipse(X, Y, 0.0f, 0.0f, -4.0f, 56.0f, 46.0f)) {
-		return TEXT("ShipwreckProjectSoftMud");
-	}
-	return TEXT("ShipwreckProjectSeabed");
 }
 
 // Config-driven replacement for the previous hardcoded-per-zone version: zone centers/radii,
@@ -569,9 +519,8 @@ SonarDetection UHolodeckRaycastSonar::ComputeDetection(
 				const FVector ClientHitPoint = ConvertLinearVector(HitPoint, UEToClient);
 				const FVector ClientSensorPoint = ConvertLinearVector(SensorTransf.GetLocation(), UEToClient);
 				const float GroundRangeM = FVector::Dist2D(ClientHitPoint, ClientSensorPoint);
-				Detection.material_type = RaycastMadoReportHardFaciesOverlayEnabled()
-					? RaycastMadoReportTerrainFaciesMaterialAtClientXY(ClientHitPoint.X, ClientHitPoint.Y)
-					: RaycastMadoReportTerrainImpedanceMaterialAtClientXY(ClientHitPoint.X, ClientHitPoint.Y, GroundRangeM);
+				Detection.material_type =
+					RaycastMadoReportTerrainImpedanceMaterialAtClientXY(ClientHitPoint.X, ClientHitPoint.Y, GroundRangeM);
 			} else {
 				Detection.material_type = TEXT("ShipwreckProjectSeabed");
 			}

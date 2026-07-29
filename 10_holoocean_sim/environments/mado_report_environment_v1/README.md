@@ -109,7 +109,7 @@ facies zone/닻돌/reef cue/wreck 스폰은 전부 C++ 하드코딩이 아니라
 | `ShipwreckProjectReefRock` | 2700 | 4500 | reef edge cue 4개 |
 | `ShipwreckProjectClutter` | 3000 | 5000 | **이 환경에서는 안 쓰임** — `HolodeckGameMode.cpp`가 같이 서빙하는 다른(구) scene preset의 gear/rope, rock mound 액터용. `mado_report_environment_v1` 코드 경로에서는 도달 불가 |
 | `ShipwreckProjectWreck` | 1100 | 1983 | **이 환경에서는 안 쓰임** — 같은 이유. 난파선 액터를 추가하면 그 이름 매칭 규칙(`SurveyWreck`/`TorpedoMesh_*`)이 그대로 적용됨 |
-| `ShipwreckProjectSoftMud`/`ShellMud`/`HardMud`/`HardMudGravel` | — | — | 지형 블렌딩에서만 쓰이는 값이며 C++ 상수로 직접 박혀 있음. CSV의 4행은 대표값 요약이고, 실제 코드는 구역마다 별도 상수(`SoftMudZ`, `ShellMud18FZ`, `ShellMud18HZ`, `DisturbedShellMud18EZ`, `HardMudPlainZ`, `HardMud19BCZ`, `HardMudGravelWestZ`)를 씀 — 아래 "구역별 재질 임피던스" 참고. CSV 행 자체는 조회되지 않음 |
+| `ShipwreckProjectSoftMud`/`ShellMud`/`HardMud`/`HardMudGravel` | — | — | 지형 블렌딩에서만 쓰이는 값. CSV의 4행은 대표값 요약이고, 실제 코드는 `Content/Config/mado_scenes/*.json`의 `facies_zones[].target_material`에서 구역별로 읽음 (config-driven — 예전처럼 C++ 상수로 박혀 있지 않음, 위 "씬 변형" 참고). CSV 행 자체는 조회되지 않음 |
 
 ## 알려진 제약 (인수인계 시 바로 알아야 할 것)
 
@@ -124,8 +124,8 @@ facies zone/닻돌/reef cue/wreck 스폰은 전부 C++ 하드코딩이 아니라
    `recommended_azimuth_ray_count()`가 자동으로 안전값을 계산합니다. 근거·검증 데이터는
    `SCENE_INTEGRATION_GUIDE.md` §4.5 참고.
 4. 지형/재질은 `HOLOOCEAN_SHIPWRECK_SCENE_PRESET=mado_report_environment_v1` 환경변수로 활성화됩니다.
-   (`HOLOOCEAN_SHIPWRECK_ENABLE_HARD_FACIES_ACOUSTIC_MAP=1`을 추가로 주면 blend 대신 binary/hard 구역 분류로
-   전환할 수 있으나, 기본값은 꺼져 있고 권장 경로는 blend 방식입니다.)
+   (예전에 있던 `HOLOOCEAN_SHIPWRECK_ENABLE_HARD_FACIES_ACOUSTIC_MAP` binary/hard 분류 토글은 실제로 쓰인 적이
+   없는 죽은 코드로 확인되어 삭제했습니다 — 이제 blend 경로만 존재합니다.)
 5. **후방산란 각도 모델은 단순 `R^2 cos(θ)` (Lambertian 형태이며, 저(低) grazing 각도에서 실제 해저처럼
    0이 아닌 바닥값(floor)을 갖지 않고 0으로 수렴합니다.** 평탄·단일재질 테스트 씬(altitude 4.7m,
    `RangeBins=1000`, `RangeMax=50m`, Very Fine Sand ρ=1298/c=1564)으로 직접 검증한 결과, 시뮬레이터 raw

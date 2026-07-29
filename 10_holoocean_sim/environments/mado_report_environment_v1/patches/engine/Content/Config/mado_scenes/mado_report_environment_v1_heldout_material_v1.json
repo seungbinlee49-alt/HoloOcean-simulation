@@ -1,6 +1,6 @@
 {
   "scene_name": "mado_report_environment_v1_heldout_material_v1",
-  "comment": "Held-out material variant for generalization testing (item 4 of the 2026-07-29 review). Identical geometry (facies zone layout, anchor stones, reef cues, wreck) to mado_report_environment_v1.json -- only the two GLOBAL baseline materials are swapped to different, still real, APL-UW TR9407 Table 2 / Hamilton (1980) rows. This is NOT a claim about the actual Taean-Mado site's composition -- it exists purely so a downstream detector/pipeline can be tested on a plausible-but-different sediment regime instead of only ever seeing the exact baseline used in mado_report_environment_v1. A sand-wave/ridge bedform tile was considered for this same item but rejected: neither the 2021 excavation report text nor the KIGAM marine geology data mention underwater sand waves/ridges/ripples at this site (the only 'dune' hit in the report is onshore Taean coastal soil, an unrelated terrestrial feature), so there is no evidence basis to add one.",
+  "comment": "Held-out material variant for generalization testing (item 4 of the 2026-07-29 review). Identical geometry (facies zone layout, anchor stones, reef cues) to mado_report_environment_v1.json -- only the two GLOBAL baseline materials are swapped to different, still real, APL-UW TR9407 Table 2 / Hamilton (1980) rows. This is NOT a claim about the actual Taean-Mado site's composition -- it exists purely so a downstream detector/pipeline can be tested on a plausible-but-different sediment regime instead of only ever seeing the exact baseline used in mado_report_environment_v1. A sand-wave/ridge bedform tile was considered for this same item but rejected: neither the 2021 excavation report text nor the KIGAM marine geology data mention underwater sand waves/ridges/ripples at this site (the only 'dune' hit in the report is onshore Taean coastal soil, an unrelated terrestrial feature), so there is no evidence basis to add one. wreck_spawns intentionally empty -- no wreck actor in either scene.",
   "terrain_data_source": "ShipwreckKhoaSmoothTerrainData",
   "baseline_material": {
     "comment": "Held-out swap: Medium Sand, APL-UW TR9407 Table 2 Hamilton ratio (Mz 1.5), coarser than the primary scene's Very Fine Sand (Mz 3.5) baseline.",
@@ -131,17 +131,5 @@
     {"id": "reef_03", "center_m": [-49.0, 42.0],  "yaw_deg": 34.0,  "length_m": 2.6,  "width_m": 0.85, "thickness_m": 0.42},
     {"id": "reef_04", "center_m": [-42.0, 47.0],  "yaw_deg": -12.0, "length_m": 2.95, "width_m": 1.03, "thickness_m": 0.49}
   ],
-  "wreck_spawns": [
-    {
-      "id": "test_hull",
-      "evidence": "NONE -- TEST-ONLY placeholder to verify highlight+shadow rendering and GT tag pipeline. Not a report-sourced wreck.",
-      "center_m": [0.0, -5.0],
-      "yaw_deg": 25.0,
-      "length_m": 12.0,
-      "width_m": 3.2,
-      "height_m": 1.6,
-      "burial_fraction": 0.0,
-      "scour_pit_enabled": false
-    }
-  ]
+  "wreck_spawns": []
 }

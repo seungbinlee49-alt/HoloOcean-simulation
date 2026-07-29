@@ -130,17 +130,5 @@
     {"id": "reef_03", "center_m": [-49.0, 42.0],  "yaw_deg": 34.0,  "length_m": 2.6,  "width_m": 0.85, "thickness_m": 0.42},
     {"id": "reef_04", "center_m": [-42.0, 47.0],  "yaw_deg": -12.0, "length_m": 2.95, "width_m": 1.03, "thickness_m": 0.49}
   ],
-  "wreck_spawns": [
-    {
-      "id": "test_hull",
-      "evidence": "NONE -- TEST-ONLY placeholder to verify highlight+shadow rendering and GT tag pipeline. Not a report-sourced wreck.",
-      "center_m": [0.0, -5.0],
-      "yaw_deg": 25.0,
-      "length_m": 12.0,
-      "width_m": 3.2,
-      "height_m": 1.6,
-      "burial_fraction": 0.0,
-      "scour_pit_enabled": false
-    }
-  ]
+  "wreck_spawns": []
 }
