@@ -17,7 +17,7 @@ HoloOcean 2.4.0 `FlatUnderwater` world 위에 만든 100 x 120m 규모의 태안
   Y∈[-120,110] 범위로 자른 서브셋, `--grid-x 401 --grid-y 351 --smooth-sigma-cells 3.5 --smooth-passes 5`).
 - **해저 재질**: 조사구역 전체는 KIGAM 표층퇴적물 판정 기반 `Very Fine Sand`(density 1298 kg/m^3, sound speed
   1564 m/s, APL-UW TR9407 Table 2 Hamilton ratio 사용, `03_data/kigam_marine_geology_shp_1994` 참고)를
-  baseline으로 깔고, 그 위에 보고서에 실측 좌표/구역 번호가 있는 9개 구역(서이상/동이상/18F/18H/18E/18G/19-B/19-C)에만
+  baseline으로 깔고, 그 위에 보고서에 실측 좌표/구역 번호가 있는 8개 구역(서이상/동이상/18F/18H/18E/18G/19-B/19-C)에만
   뻘(SoftMud/ShellMud/HardMud/HardMudGravel) 재질을 blend합니다. 구역 경계는 완벽한 타원이 아니라
   domain-warp 노이즈로 불규칙하게 처리했고, 구역 내부에도 2-옥타브 텍스처 노이즈를 추가했습니다.
   좌표/재질 근거는 `HolodeckRaycastSonar.cpp`의 각 zone 정의 옆 주석에 보고서 좌표와 함께 남겨뒀습니다.

@@ -57,7 +57,7 @@ python -m venv .venv_holoocean
 ## 현재 환경
 
 [`10_holoocean_sim/environments/mado_report_environment_v1`](10_holoocean_sim/environments/mado_report_environment_v1/README.md) —
-100 x 120m, 보고서 근거 기반 9개 재질 구역 + KHOA 기복 지형 + 닻돌 16기.
+100 x 120m, 보고서 근거 기반 8개 재질 구역 + KHOA 기복 지형 + 닻돌 16기.
 자세한 내용, 좌표, 반영 근거, 알려진 제약은 해당 README를 확인하세요.
 
 ## 포함하지 않은 것
