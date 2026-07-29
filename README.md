@@ -19,7 +19,9 @@ GT 마스크 생성)은 별도 담당자가 관리합니다. 이 저장소에서
   environments/            # 환경(씬)별 폴더 — 여러 개 씬을 이 아래에 계속 추가합니다
     mado_report_environment_v1/
       README.md            # 이 환경의 반영 근거, 좌표, SCENE_INTEGRATION_GUIDE 체크리스트 대비 현황
-      patches/engine/       # HoloOcean 2.4.0 소스에 적용할 C++ 패치
+      patches/engine.diff   # HoloOcean 2.4.0 소스에 적용할 C++ 패치 (diff, whole-file 아님)
+      patches/FIELD_IMPEDANCE_HOOK.md  # 취득 측과 같이 건드리는 파일에 대한 적용 지침
+      patches/engine/Content/   # 씬 JSON, 지형 CSV, materials.csv 등 데이터 파일
 
 04_code/
   environment_data/
