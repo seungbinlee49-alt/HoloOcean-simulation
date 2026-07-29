@@ -41,6 +41,27 @@ HoloOcean 2.4.0 `FlatUnderwater` world 위에 만든 100 x 120m 규모의 태안
 - **수온/염분/음속/밀도**: Mado-4호선 20일 CTD 평균 실측값(`--water-profile mado_ctd`, 기본값)을 사용.
   T=20.35C, S=29.95psu, rho=1020.87 kg/m^3.
 
+## 씬 변형 (config-driven variants)
+
+facies zone/닻돌/reef cue/wreck 스폰은 전부 C++ 하드코딩이 아니라
+`Content/Config/mado_scenes/*.json`에서 런타임에 읽어옵니다 (`MadoSceneConfig.h/.cpp`). 새 변형을
+만들 때 엔진을 다시 빌드할 필요 없이 JSON만 추가하면 됩니다.
+`HOLOOCEAN_SHIPWRECK_SCENE_PRESET`에 `.json`으로 끝나는 값을 주면 그 파일을(상대경로면
+`Content/Config/mado_scenes/` 기준) 직접 로드하고, `mado_report_environment_v1`처럼 알려진 이름을 주면
+번들된 기본 JSON으로 매핑됩니다.
+
+- **`mado_report_environment_v1.json`**: 위에서 설명한 기본 씬 (보고서 근거 재질/구역/닻돌/reef cue).
+- **`mado_report_environment_v1_heldout_material_v1.json`**: 지형·구역·닻돌·reef cue 배치는 기본 씬과
+  완전히 동일하고, **전역 baseline 재질만** 다른 실제 Hamilton 행(Mz 1.5 Medium Sand / Mz 5.0 Sandy Silt,
+  Gravelly Mud)으로 교체한 held-out 테스트용 변형입니다. 다운스트림 탐지 파이프라인이 기본 씬의 특정
+  재질에만 과적합되지 않았는지 확인하는 용도이며, **실제 마도 현장의 재질 구성에 대한 주장이 아닙니다**
+  (JSON의 최상위 `comment` 필드에 명시). 실측 검증: 기본 씬(Very Fine Sand) 대비 raw 신호 평균이 약 31%
+  더 밝게 나옴 — 임피던스가 더 높은 재질이므로 물리적으로 타당한 방향.
+  - **모래파/사퇴(sand wave/ridge) 지형 타일은 넣지 않았습니다.** 2021년 시굴조사 보고서 전문과 KIGAM
+    해저지질 자료 어디에도 이 현장 주변의 수중 모래파/사퇴/리플 지형에 대한 언급이 없습니다 (보고서에
+    나오는 유일한 "사구" 관련 서술은 태안 육상 해안사구 토양이며, 수중 지형과 무관). 근거가 없어 추가하지
+    않았습니다.
+
 ## 좌표/범위
 
 ```json
@@ -121,10 +142,13 @@ HoloOcean 2.4.0 `FlatUnderwater` world 위에 만든 100 x 120m 규모의 태안
 
 `patches/engine` 아래 파일을 HoloOcean 2.4.0 소스의 같은 상대경로에 덮어쓰고 다시 빌드합니다.
 
-- `Source/Holodeck/HolodeckCore/Private/HolodeckGameMode.cpp` — 지형/닻돌/reef cue 스폰
+- `Source/Holodeck/HolodeckCore/Private/HolodeckGameMode.cpp` — 지형/닻돌/reef cue/wreck 스폰 (JSON config 기반)
 - `Source/Holodeck/HolodeckCore/Private/HolodeckRaycastSonar.cpp` — 재질/임피던스 판정 (base raycast sensor 공용 클래스)
+- `Source/Holodeck/HolodeckCore/Public/MadoSceneConfig.h` — 씬 config 구조체/로더 선언 (신규)
+- `Source/Holodeck/HolodeckCore/Private/MadoSceneConfig.cpp` — JSON 파서 + `HOLOOCEAN_SHIPWRECK_SCENE_PRESET` 경로 해석 (신규)
 - `Source/Holodeck/HolodeckCore/Private/ShipwreckKhoaSmoothTerrainData.generated.h` — KHOA heightfield 데이터
 - `Content/Config/materials.csv` — 위 표의 재질 물성
+- `Content/Config/mado_scenes/*.json` — 씬 데이터 (구역/닻돌/reef cue/wreck). 위 "씬 변형" 참고
 
 **포함하지 않은 것**: `RaycastSidescanSonar.cpp/.h`, `Octree.cpp`. 이 파일들은 SSS 취득(양측 출력/빔 지향성/GT
 마스크) 담당 쪽에서 별도로 관리합니다. 이 환경 저장소는 stock 버전을 그대로 씁니다 (아래 "역할 분담" 참고).

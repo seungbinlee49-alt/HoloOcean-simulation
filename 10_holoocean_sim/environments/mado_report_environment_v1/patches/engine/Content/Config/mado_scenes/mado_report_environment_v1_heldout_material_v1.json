@@ -1,0 +1,147 @@
+{
+  "scene_name": "mado_report_environment_v1_heldout_material_v1",
+  "comment": "Held-out material variant for generalization testing (item 4 of the 2026-07-29 review). Identical geometry (facies zone layout, anchor stones, reef cues, wreck) to mado_report_environment_v1.json -- only the two GLOBAL baseline materials are swapped to different, still real, APL-UW TR9407 Table 2 / Hamilton (1980) rows. This is NOT a claim about the actual Taean-Mado site's composition -- it exists purely so a downstream detector/pipeline can be tested on a plausible-but-different sediment regime instead of only ever seeing the exact baseline used in mado_report_environment_v1. A sand-wave/ridge bedform tile was considered for this same item but rejected: neither the 2021 excavation report text nor the KIGAM marine geology data mention underwater sand waves/ridges/ripples at this site (the only 'dune' hit in the report is onshore Taean coastal soil, an unrelated terrestrial feature), so there is no evidence basis to add one.",
+  "terrain_data_source": "ShipwreckKhoaSmoothTerrainData",
+  "baseline_material": {
+    "comment": "Held-out swap: Medium Sand, APL-UW TR9407 Table 2 Hamilton ratio (Mz 1.5), coarser than the primary scene's Very Fine Sand (Mz 3.5) baseline.",
+    "density_kgm3": 1889.28,
+    "sound_speed_mps": 1743.74
+  },
+  "soft_mud_baseline_material": {
+    "comment": "Held-out swap: Sandy Silt / Gravelly Mud, APL-UW TR9407 Table 2 Hamilton ratio (Mz 5.0), different row from the primary scene's Very Fine Silt (Mz 7.5) soft-mud baseline.",
+    "density_kgm3": 1197.06,
+    "sound_speed_mps": 1479.85
+  },
+  "active_window": {
+    "comment": "Smoothstep falloff bounds (meters) from baseline to soft-mud baseline, centered at origin. Unchanged from mado_report_environment_v1.json.",
+    "x_falloff_start_m": 60.0,
+    "x_falloff_end_m": 72.0,
+    "y_falloff_start_m": 50.0,
+    "y_falloff_end_m": 62.0
+  },
+  "blend_strength": 0.35,
+  "texture_noise": {
+    "fine_cell_size_m": 0.3,
+    "coarse_cell_size_m": 0.3,
+    "coarse_freq_scale": 0.3,
+    "fine_weight": 0.6,
+    "coarse_weight": 0.4,
+    "amp_base": 0.03,
+    "amp_zone_weight_scale": 0.05,
+    "near_nadir_fade_start_m": 0.0,
+    "near_nadir_fade_end_m": 5.0
+  },
+  "domain_warp_cell_size_m": 7.0,
+  "domain_warp_fraction_of_radius": 0.22,
+  "facies_zones": [
+    {
+      "id": "west_anomaly",
+      "evidence": "N36.41.17.9 E126.08.24.4, report text: 20x20m grid, gravel + river stones in hard mud",
+      "hamilton_row": "Mz 1.0 Gravelly Muddy Sand",
+      "center_m": [-38.0, 2.0],
+      "yaw_deg": 4.0,
+      "radius_m": [10.0, 10.0],
+      "target_material": {"density_kgm3": 2151.0, "sound_speed_mps": 1812.0}
+    },
+    {
+      "id": "east_anomaly",
+      "evidence": "N36.41.18.3 E126.08.25.6, report text: grid expanded 20x20m -> 30x30m, black/dark-gray hard mud, no gravel",
+      "hamilton_row": "Mz 6.5 Fine Silt/Clayey Silt",
+      "center_m": [42.0, -31.0],
+      "yaw_deg": -9.0,
+      "radius_m": [15.0, 15.0],
+      "target_material": {"density_kgm3": 1176.0, "sound_speed_mps": 1459.0}
+    },
+    {
+      "id": "block_19b",
+      "evidence": "report: each excavation block is 50x20m; 19-B is rubble+shell mixed firm mud",
+      "hamilton_row": "Mz 4.5 Coarse Silt",
+      "center_m": [-42.0, 17.0],
+      "yaw_deg": -16.0,
+      "radius_m": [25.0, 10.0],
+      "target_material": {"density_kgm3": 1224.0, "sound_speed_mps": 1506.0}
+    },
+    {
+      "id": "block_19c",
+      "evidence": "report: each excavation block is 50x20m; 19-C is rubble+shell mixed firm mud (position relative to 19-B not given in report, adjacent placement approximated)",
+      "hamilton_row": "Mz 4.5 Coarse Silt",
+      "center_m": [-42.0, 39.0],
+      "yaw_deg": -16.0,
+      "radius_m": [25.0, 10.0],
+      "target_material": {"density_kgm3": 1224.0, "sound_speed_mps": 1506.0}
+    },
+    {
+      "id": "block_18g",
+      "evidence": "report: 50x20m block, plain firm mud, no shell/gravel mentioned",
+      "hamilton_row": "Mz 6.5 Fine Silt/Clayey Silt",
+      "center_m": [27.0, -17.0],
+      "yaw_deg": 18.0,
+      "radius_m": [25.0, 10.0],
+      "target_material": {"density_kgm3": 1176.0, "sound_speed_mps": 1459.0}
+    },
+    {
+      "id": "block_18f",
+      "evidence": "report: 50x20m block, surface (top 20cm) shell + soft mud, moderate shell content",
+      "hamilton_row": "Mz 5.5 Medium Silt/Sand-Silt-Clay",
+      "center_m": [16.0, -7.0],
+      "yaw_deg": 12.0,
+      "radius_m": [25.0, 10.0],
+      "target_material": {"density_kgm3": 1177.0, "sound_speed_mps": 1463.0}
+    },
+    {
+      "id": "block_18h",
+      "evidence": "report: 50x20m block, surface shell-dense soft mud (denser than 18-F)",
+      "hamilton_row": "Mz 5.0 Sandy Silt/Gravelly Mud",
+      "center_m": [39.0, 25.0],
+      "yaw_deg": -10.0,
+      "radius_m": [25.0, 10.0],
+      "target_material": {"density_kgm3": 1197.0, "sound_speed_mps": 1480.0}
+    },
+    {
+      "id": "block_18e_disturbed",
+      "evidence": "report: 50x20m block, surface (top ~1m) disturbed layer: pine needles, shell, modern refuse",
+      "hamilton_row": "Mz 6.0 Sandy Mud",
+      "center_m": [-14.0, -30.0],
+      "yaw_deg": 7.0,
+      "radius_m": [25.0, 10.0],
+      "target_material": {"density_kgm3": 1177.0, "sound_speed_mps": 1461.0}
+    }
+  ],
+  "anchor_stones": [
+    {"id": "176_Mado18_38",  "center_m": [-50.0, -38.0], "yaw_deg": 17.0,  "length_cm": 94.0,  "width_cm": 28.5, "thickness_cm": 10.5, "rock_type": "granite_inferred"},
+    {"id": "177_Mado18_64",  "center_m": [-36.0, -17.0], "yaw_deg": -26.0, "length_cm": 92.5,  "width_cm": 36.8, "thickness_cm": 12.0, "rock_type": "schist_or_sandstone_inferred"},
+    {"id": "178_Mado18_103", "center_m": [-18.0, -37.0], "yaw_deg": 41.0,  "length_cm": 59.0,  "width_cm": 17.5, "thickness_cm": 5.5,  "rock_type": "schist_reported"},
+    {"id": "179_Mado18_104", "center_m": [-6.0, -29.0],  "yaw_deg": -12.0, "length_cm": 148.4, "width_cm": 62.8, "thickness_cm": 21.0, "rock_type": "tuff_reported"},
+    {"id": "180_Mado18_105", "center_m": [8.0, -36.0],   "yaw_deg": 58.0,  "length_cm": 87.8,  "width_cm": 31.5, "thickness_cm": 7.5,  "rock_type": "stone_inferred"},
+    {"id": "181_Mado18_124", "center_m": [20.0, -14.0],  "yaw_deg": 8.0,   "length_cm": 116.0, "width_cm": 36.5, "thickness_cm": 12.0, "rock_type": "stone_inferred"},
+    {"id": "182_Mado18_135_18HCluster", "center_m": [31.0, 18.0], "yaw_deg": -38.0, "length_cm": 104.8, "width_cm": 28.5, "thickness_cm": 17.5, "rock_type": "stone_inferred"},
+    {"id": "183_Mado18_136_18HCluster", "center_m": [41.0, 25.0], "yaw_deg": 24.0,  "length_cm": 104.5, "width_cm": 32.3, "thickness_cm": 17.5, "rock_type": "sandstone_reported"},
+    {"id": "184_Mado18_137_18HCluster", "center_m": [36.0, 33.0], "yaw_deg": -10.0, "length_cm": 92.3,  "width_cm": 40.1, "thickness_cm": 21.2, "rock_type": "stone_inferred"},
+    {"id": "185_Mado18_141_18HCluster", "center_m": [49.0, 19.0], "yaw_deg": 44.0,  "length_cm": 79.0,  "width_cm": 30.0, "thickness_cm": 11.0, "rock_type": "tuff_reported"},
+    {"id": "186_Mado18_142_18HCluster", "center_m": [29.0, 29.0], "yaw_deg": 77.0,  "length_cm": 73.5,  "width_cm": 21.5, "thickness_cm": 9.2,  "rock_type": "sandstone_reported"},
+    {"id": "187_Mado18_143_18HCluster", "center_m": [48.0, 35.0], "yaw_deg": -52.0, "length_cm": 112.0, "width_cm": 61.0, "thickness_cm": 16.5, "rock_type": "granite_reported"},
+    {"id": "188_Mado19_33",  "center_m": [-40.0, 31.0], "yaw_deg": 32.0, "length_cm": 61.0,  "width_cm": 24.8, "thickness_cm": 6.0,  "rock_type": "stone_inferred"},
+    {"id": "189_Mado18_168_EastAnomaly", "center_m": [44.0, -25.0], "yaw_deg": 13.0,  "length_cm": 90.8,  "width_cm": 30.0, "thickness_cm": 16.0, "rock_type": "tuff_reported"},
+    {"id": "190_Mado18_173_EastAnomaly", "center_m": [52.0, -35.0], "yaw_deg": -31.0, "length_cm": 100.0, "width_cm": 23.2, "thickness_cm": 10.4, "rock_type": "tuff_or_sandstone_inferred"},
+    {"id": "191_Mado18_174_EastAnomaly", "center_m": [34.0, -38.0], "yaw_deg": 63.0,  "length_cm": 83.6,  "width_cm": 22.4, "thickness_cm": 14.6, "rock_type": "tuff_reported"}
+  ],
+  "reef_edge_cues": [
+    {"id": "reef_01", "center_m": [-57.0, -44.0], "yaw_deg": 16.0,  "length_m": 1.9,  "width_m": 0.85, "thickness_m": 0.28},
+    {"id": "reef_02", "center_m": [-54.0, -34.0], "yaw_deg": -28.0, "length_m": 2.25, "width_m": 1.03, "thickness_m": 0.35},
+    {"id": "reef_03", "center_m": [-49.0, 42.0],  "yaw_deg": 34.0,  "length_m": 2.6,  "width_m": 0.85, "thickness_m": 0.42},
+    {"id": "reef_04", "center_m": [-42.0, 47.0],  "yaw_deg": -12.0, "length_m": 2.95, "width_m": 1.03, "thickness_m": 0.49}
+  ],
+  "wreck_spawns": [
+    {
+      "id": "test_hull",
+      "evidence": "NONE -- TEST-ONLY placeholder to verify highlight+shadow rendering and GT tag pipeline. Not a report-sourced wreck.",
+      "center_m": [0.0, -5.0],
+      "yaw_deg": 25.0,
+      "length_m": 12.0,
+      "width_m": 3.2,
+      "height_m": 1.6,
+      "burial_fraction": 0.0,
+      "scour_pit_enabled": false
+    }
+  ]
+}

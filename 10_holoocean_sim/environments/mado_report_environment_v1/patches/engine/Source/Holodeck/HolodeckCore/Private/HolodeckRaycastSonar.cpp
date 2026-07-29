@@ -9,6 +9,7 @@
 #include "Benchmarker.h"
 #include "HolodeckBuoyantAgent.h"
 #include "Conversion.h"
+#include "MadoSceneConfig.h"
 
 namespace {
 
@@ -22,13 +23,7 @@ float RaycastMadoReportEllipseScore(
 	float RadiusY);
 
 bool RaycastMadoReportFaciesSceneActive() {
-	static const bool bEnabled = []() {
-		const FString ScenePreset =
-			FPlatformMisc::GetEnvironmentVariable(TEXT("HOLOOCEAN_SHIPWRECK_SCENE_PRESET"));
-		return ScenePreset.Equals(TEXT("mado_report_environment_v1"), ESearchCase::IgnoreCase) ||
-			   ScenePreset.Equals(TEXT("mado_report_environment_visual_debug_v1"), ESearchCase::IgnoreCase);
-	}();
-	return bEnabled;
+	return IsMadoReportSceneActive();
 }
 
 bool RaycastMadoReportHardFaciesOverlayEnabled() {
@@ -80,14 +75,16 @@ float RaycastMadoZoneWeight(
 	float CenterY,
 	float YawDeg,
 	float RadiusX,
-	float RadiusY) {
+	float RadiusY,
+	float DomainWarpCellSize = 7.0f,
+	float DomainWarpFraction = 0.22f) {
 	// Domain-warp the sample point before scoring against the ellipse, so the zone boundary
 	// reads as an irregular, organic sediment-facies edge instead of a mathematically perfect
 	// ellipse. Two independent noise samples (different offsets) avoid a simple radial wobble.
-	const float WarpAmpX = RadiusX * 0.22f;
-	const float WarpAmpY = RadiusY * 0.22f;
-	const float WarpedX = X + (RaycastValueNoise(X, Y, 7.0f) - 0.5f) * 2.0f * WarpAmpX;
-	const float WarpedY = Y + (RaycastValueNoise(X + 91.7f, Y + 57.3f, 7.0f) - 0.5f) * 2.0f * WarpAmpY;
+	const float WarpAmpX = RadiusX * DomainWarpFraction;
+	const float WarpAmpY = RadiusY * DomainWarpFraction;
+	const float WarpedX = X + (RaycastValueNoise(X, Y, DomainWarpCellSize) - 0.5f) * 2.0f * WarpAmpX;
+	const float WarpedY = Y + (RaycastValueNoise(X + 91.7f, Y + 57.3f, DomainWarpCellSize) - 0.5f) * 2.0f * WarpAmpY;
 	const float Score = RaycastMadoReportEllipseScore(WarpedX, WarpedY, CenterX, CenterY, YawDeg, RadiusX, RadiusY);
 	return 1.0f - RaycastSmoothStep(0.35f, 1.60f, Score);
 }
@@ -157,119 +154,47 @@ FString RaycastMadoReportTerrainFaciesMaterialAtClientXY(float X, float Y) {
 	return TEXT("ShipwreckProjectSeabed");
 }
 
+// Config-driven replacement for the previous hardcoded-per-zone version: zone centers/radii,
+// target impedances, blend strength, baseline materials, and texture-noise parameters all come
+// from GetActiveMadoSceneConfig() (see MadoSceneConfig.h) instead of being C++ constants, so a
+// new scene variant (or a parameter sweep of this one) is a JSON edit, not a rebuild. The
+// underlying math (ellipse scoring, domain warp, two-octave texture noise, near-nadir fade) is
+// unchanged from the hardcoded version -- only where the numbers come from changed. Each zone's
+// Hamilton-table/report justification lives in the JSON file itself (per-zone "evidence" field),
+// not in C++ comments anymore.
 FString RaycastMadoReportTerrainImpedanceMaterialAtClientXY(float X, float Y, float GroundRangeM) {
-	// Target impedances are read directly from the primary source scan
-	// (docs/presentation_assets/sources/APL_UW_TR9407_Table2_original_scan.png, Hamilton 1980
-	// geoacoustic model as tabulated in APL-UW TR9407 Table 2, "Model inputs in terms of sediment
-	// name"). Each zone below is mapped to the Hamilton grain-size row that best matches its
-	// *surface* (top few cm -- the only depth an SSS raycast actually sees) description in the
-	// 2021 report text, not its full sub-surface stratigraphy. Reference water values 1024
-	// kg/m^3, 1480 m/s (same as the FineSand baseline derivation).
-	constexpr float FineSandZ = 1298.0f * 1564.0f; // Mz 3.5 Very Fine Sand (rho 1.268, nu 1.0568)
-	// Mz 7.5 Very Fine Silt (rho 1.147, nu 0.9837): report only says "무른 개흙" (soft mud) for
-	// the 18-A~19-A general background, no shell/gravel mentioned -> finest/purest mud row.
-	constexpr float SoftMudZ = 1175.0f * 1456.0f;
-	// Mz 5.5 Medium Silt/Sand-Silt-Clay (rho 1.149, nu 0.9885): 18-F surface (top 20cm) is
-	// "패각과 무른개흙" (shell + soft mud) -- moderate shell content, one step coarser than pure
-	// soft mud.
-	constexpr float ShellMud18FZ = 1177.0f * 1463.0f;
-	// Mz 5.0 Sandy Silt/Gravelly Mud (rho 1.169, nu 0.9999): 18-H surface is "패각이 다수 함유된
-	// 무른 개흙" (shell content explicitly denser/more abundant than 18-F) -> the coarsest row
-	// still inside the mud family, whose own name ("Gravelly Mud") matches a shell-hash-rich mud.
-	constexpr float ShellMud18HZ = 1197.0f * 1480.0f;
-	// Mz 6.0 Sandy Mud (rho 1.149, nu 0.9873): 18-E surface (top ~1m) is a disturbed layer of
-	// pine needles, shell, and modern refuse -- mixed but not shell-dominant like 18-H.
-	constexpr float DisturbedShellMud18EZ = 1177.0f * 1461.0f;
-	// Mz 6.5 Fine Silt/Clayey Silt (rho 1.148, nu 0.9861): plain "단단한 개흙" (firm mud) with no
-	// shell/gravel mentioned -- used for both 18-G and the East anomaly, which the report
-	// describes identically (black/dark-gray firm mud, no coarse component). Hamilton's table has
-	// no separate firmness axis, so "firm" mud is represented by the same grain-size row as other
-	// shell/gravel-free mud, not a heavier one.
-	constexpr float HardMudPlainZ = 1176.0f * 1459.0f;
-	// Mz 4.5 Coarse Silt (rho 1.195, nu 1.0179): 19-B/19-C are "할석+패각 섞인 단단한 개흙" (firm
-	// mud mixed with broken rock rubble + shell) -- coarser than plain firm mud, but the rubble is
-	// described as a minor admixture, not a gravel-dominant matrix, so this stops short of the
-	// gravel rows used for the anomaly sites.
-	constexpr float HardMud19BCZ = 1224.0f * 1506.0f;
-	// Mz 1.0 Gravelly Muddy Sand (rho 2.151, nu 1.2241): West anomaly is explicitly "자갈+강돌
-	// 섞인 단단한 개흙" (gravel + river-stone mixed into firm mud) -- real coarse clasts, but
-	// still mud-matrix-dominant per the report text, not a pure gravel bed.
-	constexpr float HardMudGravelWestZ = 2203.0f * 1812.0f;
+	const FMadoSceneConfig& Config = GetActiveMadoSceneConfig();
 
-	const float ActiveX = 1.0f - RaycastSmoothStep(60.0f, 72.0f, FMath::Abs(X));
-	const float ActiveY = 1.0f - RaycastSmoothStep(50.0f, 62.0f, FMath::Abs(Y));
+	const float ActiveX = 1.0f - RaycastSmoothStep(Config.ActiveWindowXStart, Config.ActiveWindowXEnd, FMath::Abs(X));
+	const float ActiveY = 1.0f - RaycastSmoothStep(Config.ActiveWindowYStart, Config.ActiveWindowYEnd, FMath::Abs(Y));
 	const float ActiveWeight = FMath::Clamp(ActiveX * ActiveY, 0.0f, 1.0f);
 
-	float Z = FMath::Lerp(FineSandZ, SoftMudZ, ActiveWeight);
+	float Z = FMath::Lerp(Config.BaselineMaterial.Impedance(), Config.SoftMudBaselineMaterial.Impedance(), ActiveWeight);
 	float MaxZoneWeight = ActiveWeight;
 
-	// West anomaly (N36.41.17.9 E126.08.24.4, real 20x20m grid per report text) -> radius 10x10.
-	const float WestAnomalyW = RaycastMadoZoneWeight(X, Y, -38.0f, 2.0f, 4.0f, 10.0f, 10.0f);
-	// East anomaly (N36.41.18.3 E126.08.25.6, report text: grid expanded 10m each side from
-	// 20x20m to a 30x30m grid after additional finds) -> radius 15x15.
-	const float EastAnomalyW = RaycastMadoZoneWeight(X, Y, 42.0f, -31.0f, -9.0f, 15.0f, 15.0f);
-	// WestSouthTransition zone removed: no report coordinate or measured survey grid, only a
-	// general directional-trend sentence from the 19-A block description.
-	// 19-B and 19-C are two separate 50x20m excavation blocks (report: "1개의 조사구역을
-	// 50x20m으로 설정"), not one combined zone. The report does not give their relative layout,
-	// so they are placed as two adjacent 50x20m rectangles around the same approximate center
-	// used previously; only their existence/size/material is report-evidenced, not this exact
-	// adjacency.
-	const float NineteenBW = RaycastMadoZoneWeight(X, Y, -42.0f, 17.0f, -16.0f, 25.0f, 10.0f);
-	const float NineteenCW = RaycastMadoZoneWeight(X, Y, -42.0f, 39.0f, -16.0f, 25.0f, 10.0f);
-	// 18-F, 18-H, 18-E, 18-G are each a real 50x20m excavation block (same report sentence as
-	// above) -> radius 25x10.
-	const float HardMud18GW = RaycastMadoZoneWeight(X, Y, 27.0f, -17.0f, 18.0f, 25.0f, 10.0f);
-	const float Shell18FW = RaycastMadoZoneWeight(X, Y, 16.0f, -7.0f, 12.0f, 25.0f, 10.0f);
-	const float Shell18HW = RaycastMadoZoneWeight(X, Y, 39.0f, 25.0f, -10.0f, 25.0f, 10.0f);
-	const float Disturbed18EW = RaycastMadoZoneWeight(X, Y, -14.0f, -30.0f, 7.0f, 25.0f, 10.0f);
+	for (const FMadoFaciesZoneConfig& Zone : Config.FaciesZones) {
+		const float Weight = RaycastMadoZoneWeight(
+			X, Y, Zone.CenterX, Zone.CenterY, Zone.YawDeg, Zone.RadiusX, Zone.RadiusY,
+			Config.DomainWarpCellSizeM, Config.DomainWarpFractionOfRadius);
+		Z = RaycastBlendImpedance(Z, Zone.TargetMaterial.Impedance(), Weight, Config.BlendStrength);
+		MaxZoneWeight = FMath::Max(MaxZoneWeight, Weight);
+	}
 
-	// Blend strength: 0.08-0.10 was too weak to register at all (measured, no detectable
-	// contrast). 0.95 overshot the other way -- real SSS reference imagery shows the seabed as
-	// fairly uniform fine grain, not big bright blobs; the things that visually dominate real
-	// captures are actual 3D objects (wrecks, rocks) with sharp shadows, not sediment facies.
-	// 0.35 keeps zones detectable (real, evidence-based contrast) without them visually
-	// dominating the frame the way flat objects never should.
-	constexpr float BlendStrength = 0.35f;
-	Z = RaycastBlendImpedance(Z, ShellMud18FZ, Shell18FW, BlendStrength);
-	Z = RaycastBlendImpedance(Z, ShellMud18HZ, Shell18HW, BlendStrength);
-	Z = RaycastBlendImpedance(Z, DisturbedShellMud18EZ, Disturbed18EW, BlendStrength);
-	Z = RaycastBlendImpedance(Z, HardMudPlainZ, HardMud18GW, BlendStrength);
-	Z = RaycastBlendImpedance(Z, HardMud19BCZ, NineteenBW, BlendStrength);
-	Z = RaycastBlendImpedance(Z, HardMud19BCZ, NineteenCW, BlendStrength);
-	Z = RaycastBlendImpedance(Z, HardMudGravelWestZ, WestAnomalyW, BlendStrength);
-	Z = RaycastBlendImpedance(Z, HardMudPlainZ, EastAnomalyW, BlendStrength);
-
-	MaxZoneWeight = FMath::Max(MaxZoneWeight, WestAnomalyW);
-	MaxZoneWeight = FMath::Max(MaxZoneWeight, EastAnomalyW);
-	MaxZoneWeight = FMath::Max(MaxZoneWeight, NineteenBW);
-	MaxZoneWeight = FMath::Max(MaxZoneWeight, NineteenCW);
-	MaxZoneWeight = FMath::Max(MaxZoneWeight, HardMud18GW);
-	MaxZoneWeight = FMath::Max(MaxZoneWeight, Shell18FW);
-	MaxZoneWeight = FMath::Max(MaxZoneWeight, Shell18HW);
-	MaxZoneWeight = FMath::Max(MaxZoneWeight, Disturbed18EW);
-	// Two-octave smooth noise (fine mottling + coarser patchiness) for internal texture within
-	// a zone, replacing the earlier single-cell hash (blocky, and amplitude was 0.04-0.1% --
-	// essentially invisible). Real sediment facies are not uniform even within one class.
-	// Cell size matters relative to the sensor's own resolution: at RangeBins=1000 over ~50m,
-	// one pixel is ~5cm in range; a 1.6m noise cell used previously spanned ~32 range pixels x
-	// ~8 along-track pixels, reading as blurry blotches rather than grain. 0.3m/1.0m keeps the
-	// two-octave structure but at a scale that decorrelates over a handful of pixels, closer to
-	// real backscatter speckle correlation length.
-	const float FineNoise = RaycastValueNoise(X, Y, 0.3f);
-	const float CoarseNoise = RaycastValueNoise(X * 0.3f + 13.0f, Y * 0.3f + 7.0f, 0.3f);
-	const float TextureNoise = ((FineNoise * 0.6f + CoarseNoise * 0.4f) - 0.5f) * 2.0f;
+	// Two-octave smooth noise (fine mottling + coarser patchiness) for internal texture within a
+	// zone. Cell size matters relative to the sensor's own resolution -- see the
+	// texture_noise config block for the reasoning (kept in the JSON now, not here).
+	const FMadoTextureNoiseConfig& T = Config.TextureNoise;
+	const float FineNoise = RaycastValueNoise(X, Y, T.FineCellSizeM);
+	const float CoarseNoise = RaycastValueNoise(X * T.CoarseFreqScale + 13.0f, Y * T.CoarseFreqScale + 7.0f, T.CoarseCellSizeM);
+	const float TextureNoise = ((FineNoise * T.FineWeight + CoarseNoise * T.CoarseWeight) - 0.5f) * 2.0f;
 	// Near nadir (small ground range from the sensor track), the slant-range-to-ground-range
-	// mapping is nearly singular (d(ground_range)/d(slant_range) -> large as slant_range ->
-	// altitude), so consecutive range bins jump across many texture-noise grid cells' worth of
-	// world distance. Sampling a spatially-periodic noise field under that much foreshortening
-	// aliases into a fixed "zone plate" concentric-ring pattern -- confirmed by it appearing
-	// identically in the raw pre-TVG intensity regardless of terrain smoothing. Fading the
-	// texture amplitude out near nadir removes the ill-conditioned sampling regime; it also
-	// matches real SSS, where the near-nadir return is dominated by strong specular reflection,
-	// not fine backscatter texture.
-	const float NearNadirFade = RaycastSmoothStep(0.0f, 5.0f, GroundRangeM);
-	const float TextureAmp = (0.03f + 0.05f * FMath::Clamp(MaxZoneWeight, 0.0f, 1.0f)) * NearNadirFade;
+	// mapping is nearly singular, so consecutive range bins jump across many texture-noise grid
+	// cells' worth of world distance; sampling a spatially-periodic noise field under that much
+	// foreshortening aliases into a "zone plate" concentric-ring pattern. Fading the texture
+	// amplitude out near nadir removes the ill-conditioned sampling regime; it also matches real
+	// SSS, where the near-nadir return is dominated by specular reflection, not fine texture.
+	const float NearNadirFade = RaycastSmoothStep(T.NearNadirFadeStartM, T.NearNadirFadeEndM, GroundRangeM);
+	const float TextureAmp = (T.AmpBase + T.AmpZoneWeightScale * FMath::Clamp(MaxZoneWeight, 0.0f, 1.0f)) * NearNadirFade;
 	Z *= 1.0f + TextureNoise * TextureAmp;
 
 	return FString::Printf(TEXT("ShipwreckProjectImpedance_%d"), FMath::RoundToInt(Z));

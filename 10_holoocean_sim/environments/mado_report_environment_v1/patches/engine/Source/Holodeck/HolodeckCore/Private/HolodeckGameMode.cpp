@@ -17,6 +17,7 @@
 #include "ProceduralMeshComponent.h"
 
 #include "ShipwreckKhoaSmoothTerrainData.generated.h"
+#include "MadoSceneConfig.h"
 
 const char RESET_KEY[] = "RESET";
 const int  RESET_BYTES = 1;
@@ -827,69 +828,181 @@ void SpawnShipwreckProjectMadoIrregularSlab(
 }
 
 void SpawnShipwreckProjectMadoAnchorStoneField(UWorld* World) {
-	struct FMadoAnchorStone {
-		const TCHAR* Label;
-		float X;
-		float Y;
-		float YawDeg;
-		float LengthCm;
-		float WidthCm;
-		float ThicknessCm;
-		const TCHAR* RockCode;
-		FLinearColor Color;
-	};
-
-	const FMadoAnchorStone Stones[] = {
-		{TEXT("ShipwreckProject_MadoAnchorStone_176_Mado18_38"), -50.0f, -38.0f, 17.0f, 94.0f, 28.5f, 10.5f, TEXT("granite_inferred"), FLinearColor(0.38f, 0.38f, 0.36f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoAnchorStone_177_Mado18_64"), -36.0f, -17.0f, -26.0f, 92.5f, 36.8f, 12.0f, TEXT("schist_or_sandstone_inferred"), FLinearColor(0.30f, 0.31f, 0.30f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoAnchorStone_178_Mado18_103"), -18.0f, -37.0f, 41.0f, 59.0f, 17.5f, 5.5f, TEXT("schist_reported"), FLinearColor(0.29f, 0.30f, 0.30f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoAnchorStone_179_Mado18_104"), -6.0f, -29.0f, -12.0f, 148.4f, 62.8f, 21.0f, TEXT("tuff_reported"), FLinearColor(0.43f, 0.39f, 0.34f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoAnchorStone_180_Mado18_105"), 8.0f, -36.0f, 58.0f, 87.8f, 31.5f, 7.5f, TEXT("stone_inferred"), FLinearColor(0.34f, 0.34f, 0.32f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoAnchorStone_181_Mado18_124"), 20.0f, -14.0f, 8.0f, 116.0f, 36.5f, 12.0f, TEXT("stone_inferred"), FLinearColor(0.35f, 0.35f, 0.33f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoAnchorStone_182_Mado18_135_18HCluster"), 31.0f, 18.0f, -38.0f, 104.8f, 28.5f, 17.5f, TEXT("stone_inferred"), FLinearColor(0.36f, 0.35f, 0.33f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoAnchorStone_183_Mado18_136_18HCluster"), 41.0f, 25.0f, 24.0f, 104.5f, 32.3f, 17.5f, TEXT("sandstone_reported"), FLinearColor(0.44f, 0.39f, 0.31f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoAnchorStone_184_Mado18_137_18HCluster"), 36.0f, 33.0f, -10.0f, 92.3f, 40.1f, 21.2f, TEXT("stone_inferred"), FLinearColor(0.36f, 0.34f, 0.31f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoAnchorStone_185_Mado18_141_18HCluster"), 49.0f, 19.0f, 44.0f, 79.0f, 30.0f, 11.0f, TEXT("tuff_reported"), FLinearColor(0.42f, 0.38f, 0.33f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoAnchorStone_186_Mado18_142_18HCluster"), 29.0f, 29.0f, 77.0f, 73.5f, 21.5f, 9.2f, TEXT("sandstone_reported"), FLinearColor(0.45f, 0.40f, 0.32f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoAnchorStone_187_Mado18_143_18HCluster"), 48.0f, 35.0f, -52.0f, 112.0f, 61.0f, 16.5f, TEXT("granite_reported"), FLinearColor(0.39f, 0.39f, 0.37f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoAnchorStone_188_Mado19_33"), -40.0f, 31.0f, 32.0f, 61.0f, 24.8f, 6.0f, TEXT("stone_inferred"), FLinearColor(0.34f, 0.34f, 0.32f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoAnchorStone_189_Mado18_168_EastAnomaly"), 44.0f, -25.0f, 13.0f, 90.8f, 30.0f, 16.0f, TEXT("tuff_reported"), FLinearColor(0.42f, 0.38f, 0.33f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoAnchorStone_190_Mado18_173_EastAnomaly"), 52.0f, -35.0f, -31.0f, 100.0f, 23.2f, 10.4f, TEXT("tuff_or_sandstone_inferred"), FLinearColor(0.41f, 0.37f, 0.32f, 1.0f)},
-		{TEXT("ShipwreckProject_MadoAnchorStone_191_Mado18_174_EastAnomaly"), 34.0f, -38.0f, 63.0f, 83.6f, 22.4f, 14.6f, TEXT("tuff_reported"), FLinearColor(0.42f, 0.38f, 0.33f, 1.0f)},
-	};
-
-	for (int32 Index = 0; Index < UE_ARRAY_COUNT(Stones); ++Index) {
-		const FMadoAnchorStone& Stone = Stones[Index];
+	const FMadoSceneConfig& Config = GetActiveMadoSceneConfig();
+	const FLinearColor		 DefaultColor(0.35f, 0.35f, 0.33f, 1.0f);
+	for (int32 Index = 0; Index < Config.AnchorStones.Num(); ++Index) {
+		const FMadoAnchorStoneConfig& Stone = Config.AnchorStones[Index];
 		SpawnShipwreckProjectMadoIrregularSlab(
 			World,
-			Stone.Label,
-			Stone.X,
-			Stone.Y,
+			FString::Printf(TEXT("ShipwreckProject_MadoAnchorStone_%s"), *Stone.Id),
+			Stone.CenterX,
+			Stone.CenterY,
 			Stone.YawDeg,
 			Stone.LengthCm * 0.01f,
 			Stone.WidthCm * 0.01f,
 			FMath::Clamp(Stone.ThicknessCm * 0.01f, 0.045f, 0.24f),
 			true,
 			Index,
-			Stone.Color);
+			DefaultColor);
+	}
+}
+
+// Shallow radial depression around a wreck's base, tapering back to the surrounding terrain
+// height. Reuses the same triangulated-fan mesh pattern as other low-relief seabed features in
+// this file, just with a negative (dug-in) height offset instead of a positive one. Depth is
+// full ScourDepthM at the hull footprint and fades to 0 at RadiusM.
+void ShipwreckProjectSpawnScourPit(UWorld* World, const FString& Label, float CenterX, float CenterY, float RadiusM, float DepthM) {
+	constexpr int32 Segments = 24;
+	constexpr int32 Rings = 3;
+	const float		Clearance = 0.004f;
+
+	TArray<FVector> Vertices;
+	TArray<int32>	Triangles;
+	Vertices.Reserve(1 + Segments * Rings);
+
+	const float CenterZ = ShipwreckProjectKhoaTerrainZAt(CenterX, CenterY) - Clearance - DepthM;
+	Vertices.Add(FVector(CenterX, CenterY, CenterZ));
+
+	for (int32 Ring = 1; Ring <= Rings; ++Ring) {
+		const float R = static_cast<float>(Ring) / static_cast<float>(Rings);
+		for (int32 Segment = 0; Segment < Segments; ++Segment) {
+			const float Angle = 2.0f * PI * static_cast<float>(Segment) / static_cast<float>(Segments);
+			const float Px = CenterX + FMath::Cos(Angle) * RadiusM * R;
+			const float Py = CenterY + FMath::Sin(Angle) * RadiusM * R;
+			const float EdgeFalloff = FMath::Clamp(1.0f - R * R, 0.0f, 1.0f);
+			const float Z = ShipwreckProjectKhoaTerrainZAt(Px, Py) - Clearance - DepthM * EdgeFalloff;
+			Vertices.Add(FVector(Px, Py, Z));
+		}
+	}
+
+	for (int32 Segment = 0; Segment < Segments; ++Segment) {
+		const int32 Next = (Segment + 1) % Segments;
+		Triangles.Add(0);
+		Triangles.Add(1 + Next);
+		Triangles.Add(1 + Segment);
+	}
+	for (int32 Ring = 2; Ring <= Rings; ++Ring) {
+		const int32 PrevStart = 1 + (Ring - 2) * Segments;
+		const int32 CurrStart = 1 + (Ring - 1) * Segments;
+		for (int32 Segment = 0; Segment < Segments; ++Segment) {
+			const int32 Next = (Segment + 1) % Segments;
+			Triangles.Add(PrevStart + Segment);
+			Triangles.Add(CurrStart + Next);
+			Triangles.Add(CurrStart + Segment);
+			Triangles.Add(PrevStart + Segment);
+			Triangles.Add(PrevStart + Next);
+			Triangles.Add(CurrStart + Next);
+		}
+	}
+
+	SpawnShipwreckProjectProceduralMesh(World, Label, Vertices, Triangles, FLinearColor(0.20f, 0.19f, 0.17f, 1.0f));
+}
+
+// Wreck placement: position/yaw/dimensions/burial/scour come from GetActiveMadoSceneConfig()'s
+// wreck_spawns array (see MadoSceneConfig.h). The 3D mesh asset itself is out of scope for this
+// environment repo -- these are procedural placeholder hulls (box keel/ribs/rails) until a real
+// asset is swapped in; each spawn's "evidence" field in the JSON records whether it is
+// report-sourced or a test-only stand-in (the bundled default has one test-only hull, no report
+// source for its position/shape -- see its evidence field).
+void SpawnShipwreckProjectMadoWrecks(UWorld* World) {
+	const FMadoSceneConfig& Config = GetActiveMadoSceneConfig();
+	UStaticMesh*			 Cube = LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
+	if (!Cube) {
+		return;
+	}
+
+	for (const FMadoWreckSpawnConfig& Wreck : Config.WreckSpawns) {
+		const FString Prefix = FString::Printf(TEXT("ShipwreckProject_SurveyWreck_%s"), *Wreck.Id);
+		const float	  BaseX = Wreck.CenterX;
+		const float	  BaseY = Wreck.CenterY;
+		const float	  YawDeg = Wreck.YawDeg;
+		const float	  Length = Wreck.LengthM;
+		const float	  Width = Wreck.WidthM;
+		const float	  Height = Wreck.HeightM;
+		// Burial lowers the whole hull toward/into the surrounding grade, reducing exposed
+		// freeboard (and therefore the SSS highlight/shadow footprint) proportionally --
+		// burial_fraction=0 sits proud on the seafloor, =1 has its high point flush with grade.
+		const float BaseZ = ShipwreckProjectKhoaTerrainZAt(BaseX, BaseY) + 0.05f - Wreck.BurialFraction * Height;
+
+		TArray<AStaticMeshActor*> Parts;
+		Parts.Add(SpawnShipwreckProjectBox(
+			World,
+			Cube,
+			Prefix + TEXT("_Keel"),
+			ShipwreckProjectLocalLocation(0.0f, 0.0f, BaseZ + 0.18f * Height, BaseX, BaseY, YawDeg),
+			ShipwreckProjectRotation(0.0f, YawDeg, 0.0f),
+			FVector(Length, 0.18f, 0.16f * Height)));
+
+		for (int32 Index = 0; Index < 8; ++Index) {
+			const float X = -0.42f * Length + Index * (0.84f * Length / 7.0f);
+			const float RibWidth = Width * (0.62f + 0.34f * FMath::Sin((Index + 1) * PI / 9.0f));
+			Parts.Add(SpawnShipwreckProjectBox(
+				World,
+				Cube,
+				FString::Printf(TEXT("%s_Rib_%02d"), *Prefix, Index + 1),
+				ShipwreckProjectLocalLocation(X, 0.0f, BaseZ + 0.46f * Height, BaseX, BaseY, YawDeg),
+				ShipwreckProjectRotation(0.0f, YawDeg + 90.0f, 0.0f),
+				FVector(RibWidth, 0.16f, 0.22f * Height)));
+		}
+
+		Parts.Add(SpawnShipwreckProjectBox(
+			World,
+			Cube,
+			Prefix + TEXT("_PortRail"),
+			ShipwreckProjectLocalLocation(0.0f, -0.5f * Width, BaseZ + 0.55f * Height, BaseX, BaseY, YawDeg),
+			ShipwreckProjectRotation(0.0f, YawDeg, 0.0f),
+			FVector(Length, 0.16f, 0.20f * Height)));
+		Parts.Add(SpawnShipwreckProjectBox(
+			World,
+			Cube,
+			Prefix + TEXT("_StarboardRail"),
+			ShipwreckProjectLocalLocation(0.0f, 0.5f * Width, BaseZ + 0.55f * Height, BaseX, BaseY, YawDeg),
+			ShipwreckProjectRotation(0.0f, YawDeg, 0.0f),
+			FVector(Length, 0.16f, 0.20f * Height)));
+
+		for (AStaticMeshActor* Part : Parts) {
+			if (Part) {
+				Part->Tags.Add(FName(TEXT("wreck")));
+			}
+		}
+
+		if (Wreck.bScourPitEnabled) {
+			ShipwreckProjectSpawnScourPit(
+				World,
+				Prefix + TEXT("_ScourPit"),
+				BaseX,
+				BaseY,
+				Length * Wreck.ScourRadiusLengthMultiple,
+				Wreck.ScourDepthM);
+		}
+
+		UE_LOG(
+			LogHolodeck,
+			Log,
+			TEXT("ShipwreckProject 2.4: spawned wreck '%s' at %.1f,%.1f burial=%.2f scour=%d evidence=\"%s\""),
+			*Wreck.Id,
+			BaseX,
+			BaseY,
+			Wreck.BurialFraction,
+			Wreck.bScourPitEnabled ? 1 : 0,
+			*Wreck.Evidence);
 	}
 }
 
 void SpawnShipwreckProjectMadoReefEdgeCues(UWorld* World) {
-	const FLinearColor ReefColor(0.25f, 0.24f, 0.22f, 1.0f);
-	const float Xs[] = {-57.0f, -54.0f, -49.0f, -42.0f};
-	const float Ys[] = {-44.0f, -34.0f, 42.0f, 47.0f};
-	const float Yaws[] = {16.0f, -28.0f, 34.0f, -12.0f};
-	for (int32 Index = 0; Index < UE_ARRAY_COUNT(Xs); ++Index) {
+	const FMadoSceneConfig& Config = GetActiveMadoSceneConfig();
+	const FLinearColor		 ReefColor(0.25f, 0.24f, 0.22f, 1.0f);
+	for (int32 Index = 0; Index < Config.ReefEdgeCues.Num(); ++Index) {
+		const FMadoReefCueConfig& Reef = Config.ReefEdgeCues[Index];
 		SpawnShipwreckProjectMadoIrregularSlab(
 			World,
-			FString::Printf(TEXT("ShipwreckProject_MadoReefRockEdge_%02d"), Index + 1),
-			Xs[Index],
-			Ys[Index],
-			Yaws[Index],
-			1.9f + 0.35f * Index,
-			0.85f + 0.18f * (Index % 2),
-			0.28f + 0.07f * Index,
+			FString::Printf(TEXT("ShipwreckProject_MadoReefRockEdge_%s"), *Reef.Id),
+			Reef.CenterX,
+			Reef.CenterY,
+			Reef.YawDeg,
+			Reef.LengthM,
+			Reef.WidthM,
+			Reef.ThicknessM,
 			false,
 			10 + Index,
 			ReefColor);
@@ -897,12 +1010,20 @@ void SpawnShipwreckProjectMadoReefEdgeCues(UWorld* World) {
 }
 
 void SpawnShipwreckProjectMadoReportEnvironmentCore(UWorld* World) {
+	const FMadoSceneConfig& Config = GetActiveMadoSceneConfig();
 	SpawnShipwreckProjectMadoAnchorStoneField(World);
 	SpawnShipwreckProjectMadoReefEdgeCues(World);
+	SpawnShipwreckProjectMadoWrecks(World);
 	UE_LOG(
 		LogHolodeck,
 		Log,
-		TEXT("ShipwreckProject 2.4: spawned Mado report environment core active_window=120x100m facies=9_material_zones anchor_stones=16 reef_edge=4"));
+		TEXT("ShipwreckProject 2.4: spawned Mado report environment core '%s' from %s facies_zones=%d anchor_stones=%d reef_edge=%d wrecks=%d"),
+		*Config.SceneName,
+		*Config.SourceJsonPath,
+		Config.FaciesZones.Num(),
+		Config.AnchorStones.Num(),
+		Config.ReefEdgeCues.Num(),
+		Config.WreckSpawns.Num());
 }
 
 void SpawnShipwreckProjectKhoaSmoothTerrainMesh(UWorld* World) {
@@ -1188,9 +1309,10 @@ void SpawnShipwreckProjectFlatUnderwaterScene(UWorld* World) {
 	const bool bKhoaLiteratureScene =
 		ScenePreset.Equals(TEXT("khoa_survey_scene_literature_v2"), ESearchCase::IgnoreCase) ||
 		ScenePreset.Equals(TEXT("khoa_survey_scene_literature_visual_debug_v2"), ESearchCase::IgnoreCase);
-	const bool bMadoReportScene =
-		ScenePreset.Equals(TEXT("mado_report_environment_v1"), ESearchCase::IgnoreCase) ||
-		ScenePreset.Equals(TEXT("mado_report_environment_visual_debug_v1"), ESearchCase::IgnoreCase);
+	// Resolved via GetActiveMadoSceneConfig() (MadoSceneConfig.h), not a hardcoded string-equals
+	// check, so that HOLOOCEAN_SHIPWRECK_SCENE_PRESET can point at *any* JSON config file (not
+	// just the two preset names originally supported) without a C++ change.
+	const bool bMadoReportScene = IsMadoReportSceneActive();
 	const bool bMadoReportVisualDebugScene =
 		ScenePreset.Equals(TEXT("mado_report_environment_visual_debug_v1"), ESearchCase::IgnoreCase);
 	const bool bKhoaSurveyScene =
