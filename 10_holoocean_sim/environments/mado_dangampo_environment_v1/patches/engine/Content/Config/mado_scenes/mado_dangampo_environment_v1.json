@@ -1,0 +1,41 @@
+{
+  "scene_name": "mado_dangampo_environment_v1",
+  "comment": "Taean Dangampo-hae (태안 당암포해역), a real, separate excavation site from the Mado 1/2 districts -- documented in a different national R&D report source: 2019 국립해양유산연구소 '태안 당암포해역 수중발굴조사 보고서' (2017-2018 excavation, historic-site-designated zone since 2017). Real center N36 37 04.1 E126 21 15.1 ('사적 가지정 구역' center), extent 500m E-W x 200m N-S (report-stated, not KHOA-derived like Mado). This site is geographically distinct from Mado (Anheungnyang strait) -- Dangampo sits near/inside Cheonsu Bay (천수만) -- but both Taean county and multi-site simulation-environment diversity are explicit goals of this project's official R&D plan (연구개발계획서: '서남해 연안해로 집중 -- 태안, 고군산, 보령...' and Year-1 deliverable '시뮬레이션 환경 구축 및 ... 데이터셋 확보'), so this is in-scope, not a scope expansion. TERRAIN NOTE: unlike Mado, this terrain is NOT interpolated from real KHOA point data -- verified that KHOA's 150m national grid does not resolve this site's real depth gradient at all (checked: real KHOA points strictly inside the 500x200m boundary only show 2.5-4.7m depth, missing the site's own finer local survey). Instead we use the report's own multibeam-echo-sounder survey (p.51 figure + p.30 text: '사적 가지정 구역 해저는 서쪽이 수심 4~5m로 얕고 동쪽이 9~10m로 깊은 형태'), taking the two stated endpoint depths (west ~4.5m, east ~9.5m) as real anchors and connecting them with an explicit, documented linear interpolation -- this interpolation shape is our simplification, not derived data (we do not have the raw multibeam point cloud, only the report's rendered color figure, which has no coordinate grid/scale bar precise enough to extract point data from). MATERIAL: report text (confirmed consistently across 3 independent survey campaigns -- 2016 emergency survey p. line ~6908, 2017-2018 N2E3/N2E4 block logs, and the sitewide summary) describes the surface as a 20cm-sized stone + gravel layer, 20-30cm thick, over sand-bearing mud underneath. Since SSS only images the surface, this environment models the seafloor as a single uniform material matched to APL-UW TR9407 Table 2's 'Cobble, Gravel, Pebble' row (density ratio 2.50, sound speed ratio 1.80 -- this row has no Mz phi value, unlike the sand/silt rows Mado uses, since cobble/gravel/pebble is a distinct unconsolidated coarse-clast category), applied to this project's reference water values (1024 kg/m^3, 1480 m/s) = 2560 kg/m^3, 2664 m/s. This is a DIFFERENT Hamilton row than what Mado's anchor stones use ('Rock', 2560/3700) -- Mado's anchor stones are dressed/shaped solid stone artifacts, while Dangampo's seafloor is a natural loose gravel/cobble bed, so the same density but a lower sound-speed ratio (looser packing transmits sound slower than solid rock) is the correct distinction. Real anchor stone evidence DOES exist for this site (report catalog '당암 18-4', N36 37 04.20 E126 21 14.60 -- offset from site center approx dx=-12.4m/dy=+3.1m -- length 94.0cm/width 14.6cm/thickness 4.00-11.40cm/weight 21.12kg, natural stone, no rock-type ID given), but it is intentionally left out of anchor_stones here (2026-07-30 decision) -- this environment models only terrain and surface material for now, not artifact placement.",
+  "terrain_data_source": "mado_dangampo_environment_v1_terrain.csv",
+  "baseline_material": {
+    "comment": "Cobble, Gravel, Pebble, APL-UW TR9407 Table 2 Hamilton ratio (density 2.50, sound speed 1.80) x this project's reference water values (1024 kg/m^3, 1480 m/s). Matches the report's consistently-described surface stratigraphy (20cm stone + gravel layer, 20-30cm deep) at all 3 independently-documented survey points across the site.",
+    "density_kgm3": 2560.0,
+    "sound_speed_mps": 2664.0
+  },
+  "soft_mud_baseline_material": {
+    "comment": "Intentionally identical to baseline_material -- no report evidence of a second, contrasting surface material anywhere on this site (same reasoning as mado_district1_environment_v1), so the active-window blend below is inert by construction.",
+    "density_kgm3": 2560.0,
+    "sound_speed_mps": 2664.0
+  },
+  "active_window": {
+    "comment": "Inert: baseline and soft_mud_baseline are identical. Left in place only because the JSON schema expects it.",
+    "x_falloff_start_m": 200.0,
+    "x_falloff_end_m": 240.0,
+    "y_falloff_start_m": 80.0,
+    "y_falloff_end_m": 95.0
+  },
+  "blend_strength": 0.35,
+  "texture_noise": {
+    "comment": "Generic micro-texture parameters, not site-specific evidence -- reused from mado_report_environment_v1 as reasonable defaults (same as mado_district1_environment_v1's approach).",
+    "fine_cell_size_m": 0.3,
+    "coarse_cell_size_m": 0.3,
+    "coarse_freq_scale": 0.3,
+    "fine_weight": 0.6,
+    "coarse_weight": 0.4,
+    "amp_base": 0.03,
+    "amp_zone_weight_scale": 0.05,
+    "near_nadir_fade_start_m": 0.0,
+    "near_nadir_fade_end_m": 5.0
+  },
+  "domain_warp_cell_size_m": 7.0,
+  "domain_warp_fraction_of_radius": 0.22,
+  "facies_zones": [],
+  "anchor_stones": [],
+  "reef_edge_cues": [],
+  "wreck_spawns": []
+}
