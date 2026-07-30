@@ -131,11 +131,12 @@ facies zone/닻돌/reef cue/wreck 스폰은 전부 C++ 하드코딩이 아니라
 | 이름 | 밀도 kg/m^3 | 음속 m/s | 용도 |
 | --- | --- | --- | --- |
 | `ShipwreckProjectSeabed` | 1298 | 1564 | 재질 판정 실패 시 fallback (정상 동작에서는 거의 안 씀) |
-| `ShipwreckProjectAnchorStone` | 2600 | 3800 | 닻돌 16기 |
-| `ShipwreckProjectReefRock` | 2700 | 4500 | **현재 안 쓰임** — reef edge cue가 근거 없어 삭제됨 (아래 "알려진 제약" 6번). `sssmat:ShipwreckProjectReefRock` 태그 부착 코드는 이미 있어서, JSON에 근거 있는 reef cue를 다시 채워 넣기만 하면 바로 살아남 |
-| `ShipwreckProjectClutter` | 3000 | 5000 | **이 환경에서는 안 쓰임** — `HolodeckGameMode.cpp`가 같이 서빙하는 다른(구) scene preset의 gear/rope, rock mound 액터용. `mado_report_environment_v1` 코드 경로에서는 도달 불가 |
-| `ShipwreckProjectWreck` | 1100 | 1983 | **이 환경에서는 안 쓰임** — `wreck_spawns`가 비어있어서(양 환경 다 근거 있는 형태가 아니라 미스폰). `SpawnShipwreckProjectMadoWrecks`는 스폰 시 `sssmat:ShipwreckProjectWreck` + `wreck` 태그를 이미 붙이므로, JSON에 근거 있는 wreck_spawns 항목만 채우면 바로 동작 |
-| `ShipwreckProjectSoftMud`/`ShellMud`/`HardMud`/`HardMudGravel` | — | — | 지형 블렌딩에서만 쓰이는 값. CSV의 4행은 대표값 요약이고, 실제 코드는 `Content/Config/mado_scenes/*.json`의 `facies_zones[].target_material`에서 구역별로 읽음 (config-driven — 예전처럼 C++ 상수로 박혀 있지 않음, 위 "씬 변형" 참고). CSV 행 자체는 조회되지 않음 |
+| `ShipwreckProjectAnchorStone` | 2560 | 3700 | 닻돌 16기. **2026-07-30 수정**: 예전엔 저장소에 이미 있던 범용 `M_CobbleStone_Rough`(2600/3800) 값을 근거 없이 그대로 복사해서 썼음. 지금은 APL-UW TR9407 Table 2의 실제 "Rock" 행(밀도비 2.50, 음속비 2.50 × 기준 물성 1024/1480)으로 교체함. 다만 이건 암석 일반값이고, JSON `anchor_stones[].rock_type`에 이미 기록된 화강암/편암/응회암/사암 각각을 음향적으로 구분하진 않음 — Hamilton 표 자체가 미고결 퇴적물만 다루고 고결암 세부 종류는 없어서, 더 정밀하게 하려면 암석종별 실측 문헌치를 별도로 찾아야 함 |
+| `ShipwreckProjectReefRock` | 2560 | 3700 | **현재 안 쓰임** — reef edge cue가 근거 없어 삭제됨 (아래 "알려진 제약" 6번). 값은 위 AnchorStone과 같은 근거(Hamilton Table 2 "Rock" 행)로 맞춰둠. `sssmat:ShipwreckProjectReefRock` 태그 부착 코드는 이미 있어서, JSON에 근거 있는 reef cue를 다시 채워 넣기만 하면 바로 살아남 |
+| `ShipwreckProjectClutter` | 3000 | 5000 | **이 환경에서는 안 쓰임.** `HolodeckGameMode.cpp`의 `SpawnShipwreckProjectFlatUnderwaterScene` 안, `HOLOOCEAN_SHIPWRECK_SCENE_PRESET`이 아무 것도 안 가리킬 때만 실행되는 완전히 별개의 구식 폴백 데모 씬(GearRope/RockMound 액터)용. 마도 프로젝트와 무관하고, 이 씬이 활성화되면 `mado_report_environment_v1` 코드 경로가 먼저 return 되므로 도달 자체가 안 됨. 값 근거는 추적 안 됨(마도 작업 이전부터 있던 값) — 마도 프로젝트 소관이 아니라서 그대로 둠 |
+| `ShipwreckProjectWreck` | 1100 | 1983 | **이 환경에서는 안 쓰임.** 위와 같은 구식 폴백 데모 씬(`SurveyWreck_Intact_A` 등)용, 마도 프로젝트와 무관. `wreck_spawns`가 두 마도 환경 다 비어있어서(근거 있는 형태가 아니라 미스폰) 어차피 안 쓰임 — 나중에 근거 있는 wreck_spawns 항목을 채우면 `SpawnShipwreckProjectMadoWrecks`가 `sssmat:ShipwreckProjectWreck` + `wreck` 태그를 자동으로 붙이므로 이 행이 그때 다시 살아남 |
+
+**2026-07-30 삭제**: `ShipwreckProjectSoftMud`/`ShellMud`/`HardMud`/`HardMudGravel` 4행. 어떤 코드 경로도 이 이름들을 조회하지 않는 완전한 죽은 데이터였음 (facies zone 재질은 처음부터 `Content/Config/mado_scenes/*.json`의 `facies_zones[].target_material`에서 직접 읽음, 위 "씬 변형" 참고). 대표값 요약이라는 명목으로 남아있었지만 실제로 참조되는 곳이 없어 정리함.
 
 ## 알려진 제약 (인수인계 시 바로 알아야 할 것)
 

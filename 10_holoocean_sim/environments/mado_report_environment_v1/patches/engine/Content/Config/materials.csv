@@ -28,9 +28,5 @@ T_SandDunes_N_fromOceanFloor, 1298, 1564
 ShipwreckProjectSeabed, 1298, 1564
 ShipwreckProjectWreck, 1100, 1983
 ShipwreckProjectClutter, 3000, 5000
-ShipwreckProjectSoftMud, 1175, 1456
-ShipwreckProjectShellMud, 1177, 1463
-ShipwreckProjectHardMud, 1176, 1459
-ShipwreckProjectHardMudGravel, 2203, 1812
-ShipwreckProjectAnchorStone, 2600, 3800
-ShipwreckProjectReefRock, 2700, 4500
+ShipwreckProjectAnchorStone, 2560, 3700
+ShipwreckProjectReefRock, 2560, 3700
