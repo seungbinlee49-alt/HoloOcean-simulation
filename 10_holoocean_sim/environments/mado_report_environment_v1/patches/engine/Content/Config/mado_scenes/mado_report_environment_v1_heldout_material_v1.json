@@ -36,7 +36,7 @@
   "facies_zones": [
     {
       "id": "west_anomaly",
-      "evidence": "N36.41.17.9 E126.08.24.4, report text: 20x20m grid, gravel + river stones in hard mud",
+      "evidence": "CORRECTED 2026-07-31 (same fix as mado_report_environment_v1.json): this coordinate is from the report's separate Mado-3ho anomaly-area section, ~653m outside District II's terrain crop, not District II's own evidence. Kept as a plausible regional material-diversity sample; position is arbitrary placement, not geocoded. See mado_report_environment_v1.json for the full explanation.",
       "hamilton_row": "Mz 1.0 Gravelly Muddy Sand",
       "center_m": [-38.0, 2.0],
       "yaw_deg": 4.0,
@@ -45,7 +45,7 @@
     },
     {
       "id": "east_anomaly",
-      "evidence": "N36.41.18.3 E126.08.25.6, report text: grid expanded 20x20m -> 30x30m, black/dark-gray hard mud, no gravel",
+      "evidence": "CORRECTED 2026-07-31 (same fix as mado_report_environment_v1.json): this coordinate is from the report's separate Mado-3ho anomaly-area section, ~665m outside District II's terrain crop, not District II's own evidence. Kept as a plausible regional material-diversity sample; position is arbitrary placement, not geocoded. See mado_report_environment_v1.json for the full explanation.",
       "hamilton_row": "Mz 6.5 Fine Silt/Clayey Silt",
       "center_m": [42.0, -31.0],
       "yaw_deg": -9.0,
@@ -54,7 +54,7 @@
     },
     {
       "id": "block_19b",
-      "evidence": "report: each excavation block is 50x20m; 19-B is rubble+shell mixed firm mud",
+      "evidence": "CORRECTED 2026-07-31 (same fix as mado_report_environment_v1.json): report text says 19-B's surface (0-40cm) is rubble+shell scattered abundantly in SOFT mud, not firm mud (firm layer is 40-130cm, subsurface).",
       "hamilton_row": "Mz 4.5 Coarse Silt",
       "center_m": [-42.0, 17.0],
       "yaw_deg": -16.0,
@@ -63,7 +63,7 @@
     },
     {
       "id": "block_19c",
-      "evidence": "report: each excavation block is 50x20m; 19-C is rubble+shell mixed firm mud (position relative to 19-B not given in report, adjacent placement approximated)",
+      "evidence": "CORRECTED 2026-07-31 (same fix as mado_report_environment_v1.json): report text says 19-C's surface (0-40cm) is rubble+shell scattered abundantly in SOFT mud, not firm mud (firm layer is 40-180cm, subsurface). Position relative to 19-B not given in report, adjacent placement approximated.",
       "hamilton_row": "Mz 4.5 Coarse Silt",
       "center_m": [-42.0, 39.0],
       "yaw_deg": -16.0,
@@ -108,22 +108,22 @@
     }
   ],
   "anchor_stones": [
-    {"id": "176_Mado18_38",  "center_m": [-50.0, -38.0], "yaw_deg": 17.0,  "length_cm": 94.0,  "width_cm": 28.5, "thickness_cm": 10.5, "rock_type": "granite_inferred"},
-    {"id": "177_Mado18_64",  "center_m": [-36.0, -17.0], "yaw_deg": -26.0, "length_cm": 92.5,  "width_cm": 36.8, "thickness_cm": 12.0, "rock_type": "schist_or_sandstone_inferred"},
+    {"id": "176_Mado18_38",  "center_m": [-50.0, -38.0], "yaw_deg": 17.0,  "length_cm": 94.0,  "width_cm": 28.5, "thickness_cm": 10.5, "rock_type": "calc_silicate_rock_reported"},
+    {"id": "177_Mado18_64",  "center_m": [-36.0, -17.0], "yaw_deg": -26.0, "length_cm": 92.5,  "width_cm": 36.8, "thickness_cm": 12.0, "rock_type": "granite_reported"},
     {"id": "178_Mado18_103", "center_m": [-18.0, -37.0], "yaw_deg": 41.0,  "length_cm": 59.0,  "width_cm": 17.5, "thickness_cm": 5.5,  "rock_type": "schist_reported"},
     {"id": "179_Mado18_104", "center_m": [-6.0, -29.0],  "yaw_deg": -12.0, "length_cm": 148.4, "width_cm": 62.8, "thickness_cm": 21.0, "rock_type": "tuff_reported"},
-    {"id": "180_Mado18_105", "center_m": [8.0, -36.0],   "yaw_deg": 58.0,  "length_cm": 87.8,  "width_cm": 31.5, "thickness_cm": 7.5,  "rock_type": "stone_inferred"},
-    {"id": "181_Mado18_124", "center_m": [20.0, -14.0],  "yaw_deg": 8.0,   "length_cm": 116.0, "width_cm": 36.5, "thickness_cm": 12.0, "rock_type": "stone_inferred"},
-    {"id": "182_Mado18_135_18HCluster", "center_m": [31.0, 18.0], "yaw_deg": -38.0, "length_cm": 104.8, "width_cm": 28.5, "thickness_cm": 17.5, "rock_type": "stone_inferred"},
-    {"id": "183_Mado18_136_18HCluster", "center_m": [41.0, 25.0], "yaw_deg": 24.0,  "length_cm": 104.5, "width_cm": 32.3, "thickness_cm": 17.5, "rock_type": "sandstone_reported"},
-    {"id": "184_Mado18_137_18HCluster", "center_m": [36.0, 33.0], "yaw_deg": -10.0, "length_cm": 92.3,  "width_cm": 40.1, "thickness_cm": 21.2, "rock_type": "stone_inferred"},
-    {"id": "185_Mado18_141_18HCluster", "center_m": [49.0, 19.0], "yaw_deg": 44.0,  "length_cm": 79.0,  "width_cm": 30.0, "thickness_cm": 11.0, "rock_type": "tuff_reported"},
-    {"id": "186_Mado18_142_18HCluster", "center_m": [29.0, 29.0], "yaw_deg": 77.0,  "length_cm": 73.5,  "width_cm": 21.5, "thickness_cm": 9.2,  "rock_type": "sandstone_reported"},
-    {"id": "187_Mado18_143_18HCluster", "center_m": [48.0, 35.0], "yaw_deg": -52.0, "length_cm": 112.0, "width_cm": 61.0, "thickness_cm": 16.5, "rock_type": "granite_reported"},
-    {"id": "188_Mado19_33",  "center_m": [-40.0, 31.0], "yaw_deg": 32.0, "length_cm": 61.0,  "width_cm": 24.8, "thickness_cm": 6.0,  "rock_type": "stone_inferred"},
-    {"id": "189_Mado18_168_EastAnomaly", "center_m": [44.0, -25.0], "yaw_deg": 13.0,  "length_cm": 90.8,  "width_cm": 30.0, "thickness_cm": 16.0, "rock_type": "tuff_reported"},
-    {"id": "190_Mado18_173_EastAnomaly", "center_m": [52.0, -35.0], "yaw_deg": -31.0, "length_cm": 100.0, "width_cm": 23.2, "thickness_cm": 10.4, "rock_type": "tuff_or_sandstone_inferred"},
-    {"id": "191_Mado18_174_EastAnomaly", "center_m": [34.0, -38.0], "yaw_deg": 63.0,  "length_cm": 83.6,  "width_cm": 22.4, "thickness_cm": 14.6, "rock_type": "tuff_reported"}
+    {"id": "180_Mado18_105", "center_m": [8.0, -36.0],   "yaw_deg": 58.0,  "length_cm": 87.8,  "width_cm": 31.5, "thickness_cm": 7.5,  "rock_type": "vein_rock_reported"},
+    {"id": "181_Mado18_124", "center_m": [20.0, -14.0],  "yaw_deg": 8.0,   "length_cm": 116.0, "width_cm": 36.5, "thickness_cm": 12.0, "rock_type": "porphyry_reported"},
+    {"id": "182_Mado18_135_18HCluster", "center_m": [31.0, 18.0], "yaw_deg": -38.0, "length_cm": 104.8, "width_cm": 28.5, "thickness_cm": 17.5, "rock_type": "sandstone_reported"},
+    {"id": "183_Mado18_136_18HCluster", "center_m": [41.0, 25.0], "yaw_deg": 24.0,  "length_cm": 104.5, "width_cm": 32.3, "thickness_cm": 17.5, "rock_type": "gneiss_reported"},
+    {"id": "184_Mado18_137_18HCluster", "center_m": [36.0, 33.0], "yaw_deg": -10.0, "length_cm": 92.3,  "width_cm": 40.1, "thickness_cm": 21.2, "rock_type": "tuff_reported"},
+    {"id": "185_Mado18_141_18HCluster", "center_m": [49.0, 19.0], "yaw_deg": 44.0,  "length_cm": 79.0,  "width_cm": 30.0, "thickness_cm": 11.0, "rock_type": "sandstone_reported"},
+    {"id": "186_Mado18_142_18HCluster", "center_m": [29.0, 29.0], "yaw_deg": 77.0,  "length_cm": 73.5,  "width_cm": 21.5, "thickness_cm": 9.2,  "rock_type": "granite_reported"},
+    {"id": "187_Mado18_143_18HCluster", "center_m": [48.0, 35.0], "yaw_deg": -52.0, "length_cm": 112.0, "width_cm": 61.0, "thickness_cm": 16.5, "rock_type": "sandstone_reported"},
+    {"id": "188_Mado19_33",  "center_m": [-40.0, 31.0], "yaw_deg": 32.0, "length_cm": 61.0,  "width_cm": 24.8, "thickness_cm": 6.0,  "rock_type": "tuff_reported"},
+    {"id": "189_Mado18_168_EastAnomaly", "center_m": [44.0, -25.0], "yaw_deg": 13.0,  "length_cm": 90.8,  "width_cm": 30.0, "thickness_cm": 16.0, "rock_type": "porphyry_reported"},
+    {"id": "190_Mado18_173_EastAnomaly", "center_m": [52.0, -35.0], "yaw_deg": -31.0, "length_cm": 100.0, "width_cm": 23.2, "thickness_cm": 10.4, "rock_type": "tuff_reported"},
+    {"id": "191_Mado18_174_EastAnomaly", "center_m": [34.0, -38.0], "yaw_deg": 63.0,  "length_cm": 83.6,  "width_cm": 22.4, "thickness_cm": 14.6, "rock_type": "schist_reported"}
   ],
   "reef_edge_cues": [],
   "wreck_spawns": []
