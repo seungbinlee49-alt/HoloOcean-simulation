@@ -50,10 +50,32 @@ y축 양수=북쪽 (x=[-250,250], y=[-100,100]).
   "바닷속 온도가 9~10℃로 차가웠다"는 서술 하나뿐, 정밀 물성 계산에 쓸 수 있는 형태가
   아님). 그래서 이 사이트만의 독자적 온도/염분 기반 값이 아니라, 프로젝트 공통 기준
   해수값(1024 kg/m³, 1480 m/s)을 그대로 사용했습니다.
-- **유향/유속 미반영**: 원문에 실제 조류 실측 자료(유향유속계, 안면수도 밀물/썰물 방향
-  및 유속 서술)가 있지만, 현재 씬 config 시스템(`FMadoSceneConfig`) 자체에 조류/유체
-  관련 필드가 없어서 반영할 자리가 없습니다 — 구조적 한계이며, 필요해지면 별도 설계가
-  필요합니다.
+- **수온/염분/음속/밀도 — 이제 반영됨 (2026-07-31 추가)**: 물성은 씬 JSON이 아니라
+  취득 스크립트(`04_code/environment_data/run_khoa_environment_raycast_survey_v1.py`)의
+  `--water-profile` 옵션으로 관리됩니다 (마도 두 환경도 마찬가지 — `MadoSceneConfig`엔
+  이 필드 자체가 없습니다, 처음에 이 레이어를 못 찾아서 "반영 불가"라고 잘못 판단했던
+  적이 있습니다). 당암포는 원문에 마도 수준의 CTD 실측 테이블이 없어서(발간사의 "9~10℃"
+  정성적 서술뿐, 염분 실측값은 아예 없음), `apply_dangampo_water_overrides()` 함수를
+  새로 추가했습니다: 온도는 원문 서술 중간값 9.5℃(2018년 4월 2차 발굴조사, 실제 이
+  사이트 값), 염분은 마도 방향값(243.3도)과 동일하게 기존 태안항 부이 실측값 27.9psu를
+  그대로 씁니다(당암포 고유 값 아님 — 로컬 염분 데이터 자체가 없음). 밀도/음속은 이
+  둘을 UNESCO/Mackenzie 공식(스크립트에 이미 있는 공식, 새로 만든 근사식 아님)에 넣어
+  계산합니다 (수심에 따라 달라짐 — 예: 6.75m 중간수심 기준 밀도 1021.49kg/m³, 음속
+  1479.28m/s). **`--water-profile mado_ctd`(기본값)로 당암포를 캡처하면 안 됩니다** —
+  계절도 다르고(마도는 2015년 가을 CTD) 사이트도 다른 값이 섞여 들어갑니다. 반드시
+  `--water-profile dangampo_ctd`를 명시하세요.
+- **유향/유속 — 이제 반영됨 (2026-07-31 추가)**: 원문(p.33)에 "다른 해역에 비해 조류는
+  빠른 편"이라는 서술과 밀물(남서)/썰물(남동) 방향 서술이 있고, 같은 페이지에 실제
+  수치조류도(numerical tidal current chart, 조류 cm/s 색상 범례 0-20/20-40/.../120- 7단계)
+  가 있습니다. 당암포 유적 표시 지점 주변 화살표 색을 확인한 결과 가장 낮은 두 구간
+  (0-20~20-40 cm/s)에 해당하는 것으로 보였습니다 — 사이트 자체가 안면수도 본류가 아니라
+  안쪽으로 들어간 작은 만이라, "조류 빠름" 서술이 가리키는 본류 유속보다 국지적으로는
+  느릴 가능성이 있습니다. 정확한 단일 cm/s 값은 지도 해상도 한계로 특정 불가 — 마도의
+  0.115 m/s(2011 마도2호선 실측 유속표 기반)가 이 범위 안에 들어오는 우연의 일치가
+  있어서, 유속 크기는 당분간 기존 `--mado-current-speed-mps 0.115` 기본값을 그대로
+  써도 원문 범위와 모순되지 않습니다(다만 이건 "우연히 겹친다"는 것이지 당암포 고유
+  실측값이 아닙니다). 방향(243.3도, 태안항 부이)은 마도와 동일한 광역 소스를 그대로
+  재사용 — 방향은 사이트 무관하게 재사용 가능한 값이라 문제없습니다.
 
 ## 검증
 
@@ -91,3 +113,30 @@ y축 양수=북쪽 (x=[-250,250], y=[-100,100]).
 
 `mado_report_environment_v1/README.md`의 "역할 분담"과 동일 — 이 저장소는 환경/씬 제작만
 담당하고, SSS 취득 파이프라인은 별도 담당자가 관리합니다.
+
+## 실행 예시
+
+**주의: 이 환경은 마도 두 환경과 규모가 다릅니다(500×200m vs 100~140m급).**
+`--x-min`/`--x-max`/`--y-tracks` 기본값은 마도 기준으로 맞춰져 있어서, 아래처럼 명시적으로
+지정하지 않으면 지형 밖을 조사하게 됩니다. `--water-profile`도 기본값(`mado_ctd`)이 아니라
+**반드시 `dangampo_ctd`를 명시**하세요 (위 "이 환경이 반영한 것" 물성 항목 참고).
+
+```powershell
+& '.venv_holoocean\Scripts\python.exe' `
+  '04_code\environment_data\run_khoa_environment_raycast_survey_v1.py' `
+  --output-dir '06_results\mado_dangampo_environment_v1' `
+  --binary-path 'C:\path\to\HoloOcean\2.4.0\worlds\Ocean\Windows\Holodeck\Binaries\Win64\Holodeck.exe' `
+  --scene-proxy mado_dangampo_environment_v1.json `
+  --terrain-profile khoa `
+  --water-profile dangampo_ctd `
+  --x-min -250 --x-max 250 `
+  --y-tracks="-80,-40,0,40,80" `
+  --rows-per-pass 600 `
+  --sonar-hz 10 --range-bins 1000 --range-min 0.5 --range-max 60.0 `
+  --azimuth 85.0 --elevation 0.25 `
+  --azimuth-ray-count 34000 --elevation-ray-count 4
+```
+
+`HOLOOCEAN_SHIPWRECK_SCENE_PRESET=mado_dangampo_environment_v1.json` 환경변수를 실행 전에
+반드시 설정해야 합니다. `--water-profile dangampo_ctd`를 빼먹으면 마도4호선 CTD 값이 잘못
+적용됩니다 (위 참고).

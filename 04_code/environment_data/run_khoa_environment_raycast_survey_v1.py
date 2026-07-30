@@ -153,6 +153,32 @@ def apply_mado_ctd_overrides(env: BuoyEnvironment, depth_m: float) -> BuoyEnviro
     return env
 
 
+def apply_dangampo_water_overrides(env: BuoyEnvironment, depth_m: float) -> BuoyEnvironment:
+    """Override temperature/salinity/density/sound-speed for the Dangampo (당암포) site.
+
+    Unlike apply_mado_ctd_overrides(), there is no in-situ CTD table for Dangampo -- the
+    2019 excavation report only gives a qualitative "9-10 C" remark in its foreword (2018-04
+    survey, spring), no salinity measurement at all. Salinity is borrowed from the same
+    Taean-port KHOA buoy already used for direction in every water-profile mode (real reading,
+    just not Dangampo-specific: S=27.9 psu). Density/sound-speed are computed from these two
+    with the same UNESCO/Mackenzie formulas used everywhere else in this script, not hardcoded
+    -- see seawater_density_unesco_atm()/sound_speed_mackenzie(). This is intentionally lower
+    confidence than the Mado-4ho CTD override (real site temperature, but borrowed regional
+    salinity), and should NOT be presented as an in-situ Dangampo measurement."""
+    temp_c = 9.5  # midpoint of report's "9~10 C" remark (foreword, 2018-04 2nd excavation)
+    salinity = 27.9  # Taean-port buoy real reading, NOT Dangampo-specific (no local salinity data exists)
+    sound_speed = sound_speed_mackenzie(temp_c, salinity, depth_m)
+    density = seawater_density_unesco_atm(temp_c, salinity)
+    env.station = "dangampo_report_temp_plus_taean_buoy_salinity"
+    env.observed_at = "temp: 2018-04 2nd excavation report remark; salinity: buoy latest reading (not concurrent)"
+    env.distance_km = math.nan
+    env.temperature_c = temp_c
+    env.salinity_psu = salinity
+    env.sound_speed_mps = sound_speed
+    env.water_density_kgm3 = density
+    return env
+
+
 def flat_object_rows(flat_depth_m: float) -> list[dict]:
     """Object placement table for a non-KHOA flat-seabed baseline.
 
@@ -552,7 +578,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--water-profile",
-        choices=["default", "buoy", "mado_ctd"],
+        choices=["default", "buoy", "mado_ctd", "dangampo_ctd"],
         default="mado_ctd",
         help=(
             "default uses HoloOcean-style rho/c values; buoy uses the distant (37 km) KHOA "
@@ -560,7 +586,12 @@ def main() -> int:
             "salinity, and water density with the real 20-day CTD average measured at the "
             "Mado-4ho excavation site itself (2015-09-19..2015-10-09, T=20.35 C, S=29.95 psu, "
             "rho=1020.87 kg/m3), which is a closer and more direct in-situ measurement than the "
-            "distant buoy. Current direction still comes from the buoy proxy in all modes."
+            "distant buoy. dangampo_ctd uses the Dangampo report's own T=9.5 C (report remark, "
+            "no exact CTD table exists there) plus the same Taean-port buoy's S=27.9 psu (not "
+            "site-specific -- no local salinity data exists for Dangampo); rho/c computed from "
+            "these, not hardcoded. mado_ctd is the wrong choice for Dangampo captures (different "
+            "site, different season) -- pass --water-profile dangampo_ctd explicitly. Current "
+            "direction still comes from the buoy proxy in all modes."
         ),
     )
     parser.add_argument("--x-min", type=float, default=-66.0)
@@ -676,12 +707,14 @@ def main() -> int:
         return float(terrain_depth_at(terrain, x, y))
 
     nominal_depth = float(depth_at((args.x_min + args.x_max) * 0.5, float(np.median(y_tracks))))
-    if args.water_profile in ("buoy", "mado_ctd"):
+    if args.water_profile in ("buoy", "mado_ctd", "dangampo_ctd"):
         buoy_env = load_buoy_environment(args.buoy_summary, nominal_depth)
     else:
         buoy_env = default_water_environment()
     if args.water_profile == "mado_ctd":
         buoy_env = apply_mado_ctd_overrides(buoy_env, nominal_depth)
+    elif args.water_profile == "dangampo_ctd":
+        buoy_env = apply_dangampo_water_overrides(buoy_env, nominal_depth)
     current_unit = current_unit_from_direction(buoy_env.current_dir_deg)
     # Magnitude comes from the real Mado-2ho site current-meter measurements, not the distant
     # buoy reading (see --mado-current-speed-mps help). Direction still uses the buoy proxy.
