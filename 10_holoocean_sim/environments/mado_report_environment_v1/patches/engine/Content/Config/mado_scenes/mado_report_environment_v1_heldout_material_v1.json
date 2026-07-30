@@ -41,7 +41,7 @@
       "center_m": [-38.0, 2.0],
       "yaw_deg": 4.0,
       "radius_m": [10.0, 10.0],
-      "target_material": {"density_kgm3": 2151.0, "sound_speed_mps": 1812.0}
+      "target_material": {"density_kgm3": 2203.0, "sound_speed_mps": 1812.0}
     },
     {
       "id": "east_anomaly",
